@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
-import { SupabaseService } from '../../services/supabase.service';
+import { Injectable, NotFoundException, Inject, forwardRef, UnauthorizedException } from '@nestjs/common';
+import { SupabaseService } from '../../shared/services/supabase.service';
 import { Company } from './entities/company.entity';
 import { PaginationDto } from './dto/pagination.dto';
 import { SearchCompanyDto } from './dto/search-company.dto';
@@ -13,17 +13,18 @@ export class CompaniesService {
     private customerService: CustomerService
   ) {}
 
-  async findAll(searchParams: SearchCompanyDto): Promise<{ data: Company[], total: number }> {
-    console.log('Starting findAll with search params:', searchParams);
+  async findAll(userId: string, searchParams: SearchCompanyDto, token: string): Promise<{ data: Company[], total: number }> {
+    console.log('Starting findAll with userId:', userId, 'searchParams:', searchParams);
     
     try {
       const { page = 1, limit = 10, search } = searchParams;
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
-      let query = this.supabaseService.client
+      const client = await this.supabaseService.getUserClient(token);
+      let query = client
         .from('companies')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
 
       // Apply search filter if provided
       if (search) {
@@ -52,7 +53,7 @@ export class CompaniesService {
     }
   }
 
-  async findByUserId(userId: string, pagination: PaginationDto): Promise<{ data: Company[], total: number }> {
+  async findByUserId(userId: string, pagination: PaginationDto, token: string): Promise<{ data: Company[], total: number }> {
     console.log('Starting findByUserId with userId:', userId, 'pagination:', pagination);
     
     try {
@@ -60,14 +61,15 @@ export class CompaniesService {
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
+      const client = await this.supabaseService.getUserClient(token);
       // Get total count for this user
-      const { count } = await this.supabaseService.client
+      const { count } = await client
         .from('companies')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
 
       // Get paginated data for this user with customers
-      const { data, error } = await this.supabaseService.client
+      const { data, error } = await client
         .from('companies')
         .select(`
           *,
@@ -104,12 +106,13 @@ export class CompaniesService {
     }
   }
 
-  async findOne(id: string): Promise<Company> {
+  async findOne(id: string, token: string): Promise<Company> {
     console.log('Starting findOne with id:', id);
     
     try {
+      const client = await this.supabaseService.getUserClient(token);
       // First, get the company
-      const { data: company, error: companyError } = await this.supabaseService.client
+      const { data: company, error: companyError } = await client
         .from('companies')
         .select('*')
         .eq('id', id)
@@ -120,13 +123,17 @@ export class CompaniesService {
         throw new NotFoundException(`Company with ID ${id} not found`);
       }
 
+      if (!company) {
+        throw new UnauthorizedException('You do not have access to this company');
+      }
+
       // Then, get the customers using CustomerService
-      const customers = await this.customerService.findByCompanyId(id);
+      const customers = await this.customerService.findByCompanyId(id, token);
 
       // Combine the data
       const result = {
         ...company,
-        customers: customers || []
+        customers,
       };
 
       console.log('Combined response:', result);

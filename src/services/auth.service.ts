@@ -7,7 +7,8 @@ export class AuthService {
   constructor(private supabaseService: SupabaseService) {}
 
   async signUp(email: string, password: string) {
-    const { data, error } = await this.supabaseService.client.auth.signUp({
+    const client = await this.supabaseService.getClient();
+    const { data, error } = await client.auth.signUp({
       email,
       password,
     });
@@ -16,7 +17,8 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string) {
-    const { data, error } = await this.supabaseService.client.auth.signInWithPassword({
+    const client = await this.supabaseService.getClient();
+    const { data, error } = await client.auth.signInWithPassword({
       email,
       password,
     });
@@ -25,12 +27,14 @@ export class AuthService {
   }
 
   async signOut() {
-    const { error } = await this.supabaseService.client.auth.signOut();
+    const client = await this.supabaseService.getClient();
+    const { error } = await client.auth.signOut();
     if (error) throw error;
   }
 
   async getCurrentUser(): Promise<User | null> {
-    const { data: { user }, error } = await this.supabaseService.client.auth.getUser();
+    const client = await this.supabaseService.getClient();
+    const { data: { user }, error } = await client.auth.getUser();
     if (error) throw error;
     return user;
   }

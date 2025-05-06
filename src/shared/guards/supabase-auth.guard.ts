@@ -1,14 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { SupabaseService } from '../shared/services/supabase.service';
+import { SupabaseService } from '../services/supabase.service';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class SupabaseAuthGuard implements CanActivate {
   constructor(private supabaseService: SupabaseService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-
+    
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
@@ -16,13 +16,12 @@ export class AuthGuard implements CanActivate {
     try {
       const client = await this.supabaseService.getUserClient(token);
       const { data: { user }, error } = await client.auth.getUser();
-      console.log('User:', user);
       
       if (error || !user) {
         throw new UnauthorizedException('Invalid token');
       }
 
-      // Add user to request for later use
+      // Attach user to request for use in controllers
       request.user = user;
       return true;
     } catch (error) {

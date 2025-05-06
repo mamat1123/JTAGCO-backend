@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef 
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { SupabaseService } from '../../services/supabase.service';
+import { SupabaseService } from '../../shared/services/supabase.service';
 import { CompaniesService } from '../companies/companies.service';
 
 @Injectable()
@@ -13,15 +13,16 @@ export class CustomerService {
     private readonly companiesService: CompaniesService,
   ) {}
 
-  async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+  async create(userId: string, createCustomerDto: CreateCustomerDto, token: string): Promise<Customer> {
     // Verify company exists before creating customer
-   const company = await this.companiesService.findOne(createCustomerDto.company_id);
+    const company = await this.companiesService.findOne(createCustomerDto.company_id, token);
 
     if (!company) {
       throw new BadRequestException(`Company with ID ${createCustomerDto.company_id} not found`);
     }
 
-    const { data: customer, error } = await this.supabaseService.client
+    const client = await this.supabaseService.getUserClient(token);
+    const { data: customer, error } = await client
       .from('customer')
       .insert(createCustomerDto)
       .select()
@@ -35,10 +36,12 @@ export class CustomerService {
     return customer;
   }
 
-  async findAll(): Promise<Customer[]> {
-    const { data: customers, error } = await this.supabaseService.client
+  async findAll(userId: string, token: string): Promise<Customer[]> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { data: customers, error } = await client
       .from('customer')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -48,8 +51,9 @@ export class CustomerService {
     return customers;
   }
 
-  async findOne(id: string): Promise<Customer> {
-    const { data: customer, error } = await this.supabaseService.client
+  async findOne(userId: string, id: string, token: string): Promise<Customer> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { data: customer, error } = await client
       .from('customer')
       .select('*')
       .eq('id', id)
@@ -63,11 +67,13 @@ export class CustomerService {
     return customer;
   }
 
-  async update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
-    const { data: customer, error } = await this.supabaseService.client
+  async update(userId: string, id: string, updateCustomerDto: UpdateCustomerDto, token: string): Promise<Customer> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { data: customer, error } = await client
       .from('customer')
-      .select('*')
+      .update(updateCustomerDto)
       .eq('id', id)
+      .select()
       .single();
 
     if (error) {
@@ -75,23 +81,12 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    const { data: updatedCustomer, error: updateError } = await this.supabaseService.client
-      .from('customer')
-      .update(updateCustomerDto)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('Supabase error:', updateError);
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
-
-    return updatedCustomer;
+    return customer;
   }
 
-  async remove(id: string): Promise<void> {
-    const { error } = await this.supabaseService.client
+  async remove(userId: string, id: string, token: string): Promise<void> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { error } = await client
       .from('customer')
       .delete()
       .eq('id', id);
@@ -102,29 +97,15 @@ export class CustomerService {
     }
   }
 
-  async findByCompanyId(companyId: string): Promise<Customer[]> {
-    // First, let's verify the company exists and get its user_id
-    const { data: company, error: companyError } = await this.supabaseService.client
-      .from('companies')
-      .select('user_id')
-      .eq('id', companyId)
-      .single();
-
-    console.log('Company data:', company);
-
-    if (companyError) {
-      console.error('Company lookup error:', companyError);
-      throw new Error('Failed to verify company ownership');
-    }
-
-    // Now get the customers
-    const { data: customers, error } = await this.supabaseService.client
+  async findByCompanyId(companyId: string, token: string): Promise<Customer[]> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { data: customers, error } = await client
       .from('customer')
       .select('*')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
 
-    console.log('Supabase response:', { data: customers, error });
+    console.log('customers', customers);
 
     if (error) {
       console.error('Supabase error:', error);

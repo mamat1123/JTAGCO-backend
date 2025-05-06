@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
-import { SupabaseService } from '../../services/supabase.service';
+import { SharedModule } from '../../shared/shared.module';
+import { AuthGuard } from '../../guards/auth.guard';
 
 @Module({
+  imports: [SharedModule],
   controllers: [ProfilesController],
-  providers: [ProfilesService, SupabaseService],
-  exports: [ProfilesService],
+  providers: [ProfilesService, AuthGuard],
+  exports: [ProfilesService]
 })
 export class ProfilesModule {} 

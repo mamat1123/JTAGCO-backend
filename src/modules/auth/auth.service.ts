@@ -15,7 +15,8 @@ export class AuthService {
 
       // Register user with Supabase Auth
       const mockEmail = `${username}@jtagco.com`;
-      const { data: authData, error: authError } = await this.supabaseService.client.auth.signUp({
+      const client = await this.supabaseService.getClient();
+      const { data: authData, error: authError } = await client.auth.signUp({
         email: mockEmail,
         password,
         options: {
@@ -42,7 +43,7 @@ export class AuthService {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Get the created profile
-      const { data: profile, error: profileError } = await this.supabaseService.client
+      const { data: profile, error: profileError } = await client
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)
@@ -74,7 +75,8 @@ export class AuthService {
       const { username, password } = loginDto;
 
       const mockEmail = `${username}@jtagco.com`;
-      const { data: authData, error: authError } = await this.supabaseService.client.auth.signInWithPassword({
+      const client = await this.supabaseService.getClient();
+      const { data: authData, error: authError } = await client.auth.signInWithPassword({
         email: mockEmail,
         password
       });
@@ -89,7 +91,7 @@ export class AuthService {
       }
 
       // Get profile data including username
-      const { data: profile, error: profileError } = await this.supabaseService.client
+      const { data: profile, error: profileError } = await client
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)

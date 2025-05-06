@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../../services/supabase.service';
+import { SupabaseService } from '../../shared/services/supabase.service';
 
 @Injectable()
 export class ProfilesService {
   constructor(private supabaseService: SupabaseService) {}
 
-  async findProfileIdByUserId(userId: string): Promise<string> {
-    console.log('this.supabaseService', this.supabaseService);
-    const { data, error } = await this.supabaseService.client
+  async findProfileIdByUserId(userId: string, token: string): Promise<string> {
+    const client = await this.supabaseService.getUserClient(token);
+    const { data, error } = await client
       .from('profiles')
       .select('id')
       .eq('user_id', userId)

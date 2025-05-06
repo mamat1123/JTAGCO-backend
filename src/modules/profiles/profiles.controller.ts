@@ -1,14 +1,27 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { AuthGuard } from '../../guards/auth.guard';
+import { Request as ExpressRequest } from 'express';
+import { User } from '@supabase/supabase-js';
+
+interface RequestWithUser extends ExpressRequest {
+  user: User;
+}
 
 @Controller('profiles')
 @UseGuards(AuthGuard)
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
-  @Get('/:userId')
-  async getProfileId(@Param('userId') userId: string) {
-    return this.profilesService.findProfileIdByUserId(userId);
+  @Get('user/:userId')
+  async findProfileIdByUserId(
+    @Req() req: RequestWithUser,
+    @Param('userId') userId: string
+  ): Promise<string> {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+    return this.profilesService.findProfileIdByUserId(userId, token);
   }
 } 
