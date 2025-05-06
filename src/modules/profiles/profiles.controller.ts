@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
-import { AuthGuard } from '../../guards/auth.guard';
+import { SupabaseAuthGuard } from '../../shared/guards/supabase-auth.guard';
 import { Request as ExpressRequest } from 'express';
 import { User } from '@supabase/supabase-js';
 
@@ -9,7 +9,7 @@ interface RequestWithUser extends ExpressRequest {
 }
 
 @Controller('profiles')
-@UseGuards(AuthGuard)
+@UseGuards(SupabaseAuthGuard)
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 

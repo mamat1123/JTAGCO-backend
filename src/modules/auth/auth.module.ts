@@ -3,13 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
-import { SupabaseService } from '../../services/supabase.service';
+import { SharedModule } from '../../shared/shared.module';
 
 @Module({
   imports: [
     ConfigModule,
+    SharedModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, SupabaseService],
+  providers: [AuthService],
 })
 export class AuthModule {} 

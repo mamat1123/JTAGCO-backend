@@ -3,7 +3,6 @@ import { CompaniesController } from './companies.controller';
 import { CompaniesService } from './companies.service';
 import { CustomerModule } from '../customer/customer.module';
 import { SharedModule } from '../../shared/shared.module';
-import { SupabaseService } from '../../services/supabase.service';
 
 @Module({
   imports: [
@@ -11,7 +10,7 @@ import { SupabaseService } from '../../services/supabase.service';
     SharedModule
   ],
   controllers: [CompaniesController],
-  providers: [CompaniesService, SupabaseService],
+  providers: [CompaniesService],
   exports: [CompaniesService],
 })
 export class CompaniesModule {} 

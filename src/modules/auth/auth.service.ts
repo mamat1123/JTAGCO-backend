@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { SupabaseService } from '../../services/supabase.service';
+import { SupabaseService } from '../../shared/services/supabase.service';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +15,7 @@ export class AuthService {
 
       // Register user with Supabase Auth
       const mockEmail = `${username}@jtagco.com`;
-      const client = await this.supabaseService.getClient();
+      const client = this.supabaseService.client;
       const { data: authData, error: authError } = await client.auth.signUp({
         email: mockEmail,
         password,
@@ -75,7 +75,7 @@ export class AuthService {
       const { username, password } = loginDto;
 
       const mockEmail = `${username}@jtagco.com`;
-      const client = await this.supabaseService.getClient();
+      const client = this.supabaseService.client;
       const { data: authData, error: authError } = await client.auth.signInWithPassword({
         email: mockEmail,
         password

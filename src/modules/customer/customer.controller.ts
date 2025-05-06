@@ -4,7 +4,6 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Customer } from './entities/customer.entity';
 import { SupabaseAuthGuard } from '../../shared/guards/supabase-auth.guard';
-import { AuthGuard } from '../../guards/auth.guard';
 import { Request as ExpressRequest } from 'express';
 import { User } from '@supabase/supabase-js';
 
@@ -13,9 +12,9 @@ interface RequestWithUser extends ExpressRequest {
 }
 
 @Controller('customer')
-@UseGuards(AuthGuard)
+@UseGuards(SupabaseAuthGuard)
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService) { }
+  constructor(private readonly customerService: CustomerService) {}
 
   @Post()
   async create(

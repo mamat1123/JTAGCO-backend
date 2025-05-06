@@ -8,7 +8,7 @@ import { CustomerService } from '../customer/customer.service';
 @Injectable()
 export class CompaniesService {
   constructor(
-    private supabaseService: SupabaseService,
+    private readonly supabaseService: SupabaseService,
     @Inject(forwardRef(() => CustomerService))
     private customerService: CustomerService
   ) {}
@@ -21,26 +21,29 @@ export class CompaniesService {
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
+      // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
+      
       let query = client
         .from('companies')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact' });
 
       // Apply search filter if provided
       if (search) {
-        query = query.or(`id.ilike.%${search}%,name.ilike.%${search}%`);
+        query = query.ilike('name', `%${search}%`);
       }
 
-      // Get total count and data in one query
-      const { data, error, count } = await query
+      // Get total count
+      const { count } = await query;
+
+      // Get paginated data
+      const { data, error } = await query
         .range(start, end)
         .order('created_at', { ascending: false });
 
-      console.log('Supabase response:', { data, error, count });
-
       if (error) {
         console.error('Supabase error:', error);
-        throw new Error(`Failed to fetch companies: ${error.message}`);
+        throw new Error('Failed to fetch companies');
       }
 
       return {
@@ -48,7 +51,7 @@ export class CompaniesService {
         total: count || 0
       };
     } catch (error) {
-      console.error('Exception in findAll:', error);
+      console.error('Error in findAll:', error);
       throw error;
     }
   }
@@ -61,7 +64,9 @@ export class CompaniesService {
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
+      // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
+
       // Get total count for this user
       const { count } = await client
         .from('companies')
@@ -73,27 +78,15 @@ export class CompaniesService {
         .from('companies')
         .select(`
           *,
-          customer (
-            id,
-            contact_name,
-            position,
-            email,
-            phone,
-            line_id,
-            image_url,
-            created_at,
-            updated_at
-          )
+          customers:customer(*)
         `)
         .eq('user_id', userId)
         .range(start, end)
         .order('created_at', { ascending: false });
 
-      console.log('Supabase response:', { data, error, count });
-
       if (error) {
         console.error('Supabase error:', error);
-        throw new Error(`Failed to fetch companies for user ${userId}: ${error.message}`);
+        throw new Error('Failed to fetch companies');
       }
 
       return {
@@ -101,16 +94,18 @@ export class CompaniesService {
         total: count || 0
       };
     } catch (error) {
-      console.error('Exception in findByUserId:', error);
+      console.error('Error in findByUserId:', error);
       throw error;
     }
   }
 
-  async findOne(id: string, token: string): Promise<Company> {
+  async findOne(id: string, userId: string, token: string): Promise<Company> {
     console.log('Starting findOne with id:', id);
     
     try {
+      // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
+
       // First, get the company
       const { data: company, error: companyError } = await client
         .from('companies')
@@ -119,7 +114,7 @@ export class CompaniesService {
         .single();
 
       if (companyError) {
-        console.error('Supabase error:', companyError);
+        console.error('Company lookup error:', companyError);
         throw new NotFoundException(`Company with ID ${id} not found`);
       }
 
@@ -137,10 +132,9 @@ export class CompaniesService {
       };
 
       console.log('Combined response:', result);
-
       return result;
     } catch (error) {
-      console.error('Exception in findOne:', error);
+      console.error('Error in findOne:', error);
       throw error;
     }
   }

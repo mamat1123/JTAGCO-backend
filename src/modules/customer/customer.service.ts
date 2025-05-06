@@ -15,13 +15,15 @@ export class CustomerService {
 
   async create(userId: string, createCustomerDto: CreateCustomerDto, token: string): Promise<Customer> {
     // Verify company exists before creating customer
-    const company = await this.companiesService.findOne(createCustomerDto.company_id, token);
+    const company = await this.companiesService.findOne(createCustomerDto.company_id, userId, token);
 
     if (!company) {
       throw new BadRequestException(`Company with ID ${createCustomerDto.company_id} not found`);
     }
 
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { data: customer, error } = await client
       .from('customer')
       .insert(createCustomerDto)
@@ -30,14 +32,16 @@ export class CustomerService {
 
     if (error) {
       console.error('Supabase error:', error);
-      throw new BadRequestException('Failed to create customer: ' + error.message);
+      throw new Error('Failed to create customer');
     }
 
     return customer;
   }
 
   async findAll(userId: string, token: string): Promise<Customer[]> {
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { data: customers, error } = await client
       .from('customer')
       .select('*')
@@ -52,7 +56,9 @@ export class CustomerService {
   }
 
   async findOne(userId: string, id: string, token: string): Promise<Customer> {
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { data: customer, error } = await client
       .from('customer')
       .select('*')
@@ -68,7 +74,9 @@ export class CustomerService {
   }
 
   async update(userId: string, id: string, updateCustomerDto: UpdateCustomerDto, token: string): Promise<Customer> {
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { data: customer, error } = await client
       .from('customer')
       .update(updateCustomerDto)
@@ -85,7 +93,9 @@ export class CustomerService {
   }
 
   async remove(userId: string, id: string, token: string): Promise<void> {
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { error } = await client
       .from('customer')
       .delete()
@@ -93,23 +103,23 @@ export class CustomerService {
 
     if (error) {
       console.error('Supabase error:', error);
-      throw new NotFoundException(`Customer with ID ${id} not found`);
+      throw new Error('Failed to delete customer');
     }
   }
 
   async findByCompanyId(companyId: string, token: string): Promise<Customer[]> {
+    // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
+
     const { data: customers, error } = await client
       .from('customer')
       .select('*')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
 
-    console.log('customers', customers);
-
     if (error) {
       console.error('Supabase error:', error);
-      throw new Error('Failed to fetch customers by company ID');
+      throw new Error('Failed to fetch customers');
     }
 
     return customers;
