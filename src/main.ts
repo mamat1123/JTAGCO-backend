@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { ErrorLoggingInterceptor } from './interceptors/error-logging.interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,6 +26,16 @@ async function bootstrap() {
 
   // Add global error logging interceptor
   app.useGlobalInterceptors(new ErrorLoggingInterceptor());
+
+  // Swagger configuration
+  const config = new DocumentBuilder()
+    .setTitle('JTAGCO API')
+    .setDescription('The JTAGCO API documentation')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
   
   await app.listen(3000);
 }

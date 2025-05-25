@@ -1,17 +1,40 @@
-import { Controller, Get, Param, Query, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { AuthGuard } from '../../shared/guards/auth.guard';
 import { SearchCompanyDto } from './dto/search-company.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { AuthUser, AuthUserData } from '../../shared/decorators/auth-user.decorator';
+import { CreateCompanyDto } from './dto/create-company.dto';
+import { ProfilesService } from '../profiles/profiles.service';
 
 @Controller('companies')
 @UseGuards(AuthGuard)
 export class CompaniesController {
   constructor(
     private readonly companiesService: CompaniesService,
+    private readonly profilesService: ProfilesService,
   ) {}  
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @AuthUser() auth: AuthUserData,
+    @Body() createCompanyDto: CreateCompanyDto
+  ): Promise<Company> {
+    // Get profile ID from profiles service
+    const profile = await this.profilesService.findProfileIdByUserId(auth.user.id, auth.token);
+    
+    if (!profile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    return this.companiesService.create(
+      profile.id.toString(),
+      createCompanyDto,
+      auth.token
+    );
+  }
 
   @Get()
   async findAll(

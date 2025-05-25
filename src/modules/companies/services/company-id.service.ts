@@ -1,36 +1,66 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Company } from '../entities/company.entity';
-import { Like } from 'typeorm';
+import { SupabaseService } from '../../../shared/services/supabase.service';
 
 @Injectable()
 export class CompanyIdService {
   constructor(
-    @InjectRepository(Company)
-    private companyRepository: Repository<Company>,
+    private readonly supabaseService: SupabaseService,
   ) {}
 
-  async generateCompanyId(userId: string): Promise<string> {
+  /**
+   * Generates a company ID with the following format:
+   * YY + MM + UU + CCCC
+   * Where:
+   * YY = Buddhist year (2 digits)
+   * MM = Month (2 digits)
+   * UU = User ID from profiles table (2 digits)
+   * CCCC = Company count for the user in current month (4 digits)
+   */
+  async generateCompanyId(token: string, profileId: string): Promise<string> {
     const now = new Date();
-    const year = now.getFullYear().toString().slice(-2); // Get last 2 digits of year
-    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Get month (01-12)
     
+    // Get Buddhist year (current year + 543)
+    const buddhistYear = (now.getFullYear() + 543).toString().slice(-2);
+    
+    // Get month with leading zero
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    
+    // Use the profile ID, padded to 2 digits
+    const formattedUserId = profileId.padStart(2, '0');
+
+    // Get authenticated client for RLS
+    const client = await this.supabaseService.getUserClient(token);
+
     // Get the count of companies for this user in the current month
-    const count = await this.companyRepository.count({
-      where: {
-        userId,
-        id: Like(`${year}${month}%`),
-      },
-    });
+    try {
+      console.log('Querying companies with pattern:', `${buddhistYear}${month}${formattedUserId}%`);
+      
+      const { count, error } = await client
+        .from('companies')
+        .select('id', { count: 'exact', head: true })
+        .like('id', `${buddhistYear}${month}${formattedUserId}%`);
 
-    // Format the count with leading zeros (4 digits)
-    const countStr = (count + 1).toString().padStart(4, '0');
-    
-    // Format userId to 3 digits with leading zeros
-    const userIdStr = userId.padStart(3, '0');
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          query: `${buddhistYear}${month}${formattedUserId}%`
+        });
+        throw new Error(`Failed to count companies: ${error.message}`);
+      }
 
-    // Combine all parts: YY + MM + userId + count
-    return `${year}${month}${userIdStr}${countStr}`;
+      // Format the count with leading zeros (4 digits)
+      const countStr = ((count || 0) + 1).toString().padStart(4, '0');
+
+      // Combine all parts: YY + MM + UU + CCCC
+      const companyId = `${buddhistYear}${month}${formattedUserId}${countStr}`;
+      console.log('Generated company ID:', companyId);
+      return companyId;
+    } catch (error) {
+      console.error('Error in generateCompanyId:', error);
+      throw error;
+    }
   }
 } 

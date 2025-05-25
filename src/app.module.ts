@@ -8,6 +8,11 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { SharedModule } from './shared/shared.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
+import { ProductsModule } from './modules/products/products.module';
+import { EventsModule } from './modules/events/events.module';
+import { EventMainTypesModule } from './modules/event-main-types/event-main-types.module';
+import { EventSubTypesModule } from './modules/event-sub-types/event-sub-types.module';
+import { BusinessTypesModule } from './modules/business-types/business-types.module';
 
 @Module({
   imports: [
@@ -25,6 +30,11 @@ import { getTypeOrmConfig } from './config/typeorm.config';
     CompaniesModule,
     ProfilesModule,
     CustomerModule,
+    ProductsModule,
+    EventsModule,
+    EventMainTypesModule,
+    EventSubTypesModule,
+    BusinessTypesModule,
   ],
 })
 export class AppModule {}
