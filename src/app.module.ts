@@ -5,7 +5,7 @@ import supabaseConfig from './config/supabase.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
-import { CustomerModule } from './modules/customer/customer.module';
+import { CustomerModule } from './modules/customers/customer.module';
 import { SharedModule } from './shared/shared.module';
 import { getTypeOrmConfig } from './config/typeorm.config';
 import { ProductsModule } from './modules/products/products.module';

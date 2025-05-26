@@ -3,8 +3,9 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 import { Company } from './entities/company.entity';
 import { PaginationDto } from './dto/pagination.dto';
 import { SearchCompanyDto } from './dto/search-company.dto';
-import { CustomerService } from '../customer/customer.service';
+import { CustomerService } from '../customers/customer.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyIdService } from './services/company-id.service';
 
 @Injectable()
@@ -75,7 +76,7 @@ export class CompaniesService {
 
       // Apply search filter if provided
       if (search) {
-        query = query.ilike('name', `%${search}%`);
+        query = query.or(`name.ilike.%${search}%,id.ilike.%${search}%`);
       }
 
       // Apply specific filters
@@ -195,6 +196,45 @@ export class CompaniesService {
       return result;
     } catch (error) {
       console.error('Error in findOne:', error);
+      throw error;
+    }
+  }
+
+  async update(id: string, userId: string, updateCompanyDto: UpdateCompanyDto, token: string): Promise<Company> {
+    console.log('Starting update with id:', id, 'updateCompanyDto:', updateCompanyDto);
+    
+    try {
+      // Get authenticated client for RLS
+      const client = await this.supabaseService.getUserClient(token);
+
+      // First, check if the company exists and belongs to the user
+      const { data: existingCompany, error: checkError } = await client
+        .from('companies')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingCompany) {
+        console.error('Company lookup error:', checkError);
+        throw new NotFoundException(`Company with ID ${id} not found`);
+      }
+
+      // Update the company
+      const { data: updatedCompany, error: updateError } = await client
+        .from('companies')
+        .update(updateCompanyDto)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw new Error(`Failed to update company: ${updateError.message}`);
+      }
+
+      return updatedCompany;
+    } catch (error) {
+      console.error('Error in update:', error);
       throw error;
     }
   }

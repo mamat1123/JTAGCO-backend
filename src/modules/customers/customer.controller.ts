@@ -11,7 +11,7 @@ interface RequestWithUser extends ExpressRequest {
   user: User;
 }
 
-@Controller('customer')
+@Controller('customers')
 @UseGuards(SupabaseAuthGuard)
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}

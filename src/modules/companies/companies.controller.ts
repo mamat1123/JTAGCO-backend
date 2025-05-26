@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { AuthGuard } from '../../shared/guards/auth.guard';
@@ -6,6 +6,7 @@ import { SearchCompanyDto } from './dto/search-company.dto';
 import { PaginationDto } from './dto/pagination.dto';
 import { AuthUser, AuthUserData } from '../../shared/decorators/auth-user.decorator';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 
 @Controller('companies')
@@ -63,5 +64,15 @@ export class CompaniesController {
     @Param('id') id: string
   ): Promise<Company> {
     return this.companiesService.findOne(id, auth.user.id, auth.token);
+  }
+
+  @Put(':id')
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @AuthUser() auth: AuthUserData,
+    @Param('id') id: string,
+    @Body() updateCompanyDto: UpdateCompanyDto
+  ): Promise<Company> {
+    return this.companiesService.update(id, auth.user.id, updateCompanyDto, auth.token);
   }
 }

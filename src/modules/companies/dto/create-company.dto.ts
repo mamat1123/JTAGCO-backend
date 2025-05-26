@@ -10,8 +10,8 @@ export class CreateCompanyDto {
   user_id?: string;
 
   @IsOptional()
-  @IsString()
-  business_type_id?: string;
+  @IsNumber()
+  business_type_id?: number;
 
   @IsOptional()
   @IsString()
@@ -96,4 +96,8 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsString()
   detail?: string;
+
+  @IsOptional()
+  @IsString()
+  issues_encountered_list?: string;
 } 

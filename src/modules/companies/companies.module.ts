@@ -1,7 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { CompaniesController } from './companies.controller';
 import { CompaniesService } from './companies.service';
-import { CustomerModule } from '../customer/customer.module';
+import { CustomerModule } from '../customers/customer.module';
 import { SharedModule } from '../../shared/shared.module';
 import { CompanyIdService } from './services/company-id.service';
 import { ProfilesModule } from '../profiles/profiles.module';

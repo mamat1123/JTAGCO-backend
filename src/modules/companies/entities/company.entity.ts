@@ -16,7 +16,7 @@ export class Company {
   userId: string;
 
   @Column({ nullable: true })
-  businessTypeId: string;
+  businessTypeId: number;
 
   // @ManyToOne(() => BusinessType)
   // businessType: BusinessType;
@@ -41,9 +41,6 @@ export class Company {
 
   @Column({ nullable: true })
   province: string;
-
-  @Column({ nullable: true })
-  zipCode: number;
 
   @Column({ nullable: true })
   email: string;
