@@ -1,40 +1,62 @@
-import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { EventStatus } from '../entities/event.entity';
+import { Type } from 'class-transformer';
+
+class ProductDto {
+  @IsString()
+  @IsNotEmpty()
+  variant_id: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  quantity: number;
+}
 
 export class CreateEventDto {
   @IsNotEmpty()
   @IsString()
-  companyId: string;
+  company_id: string;
 
   @IsNotEmpty()
-  @IsInt()
-  userId: number;
+  @IsString()
+  main_type_id: string;
 
   @IsNotEmpty()
-  @IsInt()
-  mainTypeId: number;
-
-  @IsNotEmpty()
-  @IsInt()
-  subTypeId: number;
+  @IsString()
+  sub_type_id: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsNotEmpty()
-  @IsDate()
-  scheduledAt: Date;
+  @IsString()
+  scheduled_at: string;
 
   @IsOptional()
-  @IsDate()
-  testStartAt?: Date;
+  @IsString()
+  test_start_at?: string;
 
   @IsOptional()
-  @IsDate()
-  testEndAt?: Date;
+  @IsString()
+  test_end_at?: string;
 
   @IsOptional()
   @IsEnum(EventStatus)
   status?: EventStatus;
+
+  @IsOptional()
+  @IsString()
+  customer_id?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  image_urls?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductDto)
+  products?: ProductDto[];
 } 

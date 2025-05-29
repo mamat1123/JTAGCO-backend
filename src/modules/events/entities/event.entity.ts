@@ -5,6 +5,33 @@ export enum EventStatus {
   COMPLETED = 'completed',
 }
 
+interface EventImage {
+  url: string;
+  type: string;
+}
+
+interface ShoeVariant {
+  id: string;
+  sku: string;
+  attributes: {
+    size?: string;
+    color?: string;
+    image?: string;
+    steel_plate?: string;
+  };
+  price: number;
+  stock: number;
+  products: {
+    id: string;
+    name: string;
+  };
+}
+
+interface EventShoeVariant {
+  quantity: number;
+  shoe_variants: ShoeVariant;
+}
+
 @Entity('events')
 export class Event {
   @PrimaryGeneratedColumn('uuid')
@@ -51,6 +78,6 @@ export class Event {
   companyName?: string;
   userFullName?: string;
   subTypeName?: string;
-  eventImages?: string[];
-  eventCheckins?: string[];
+  eventImages?: EventImage[];
+  eventShoeVariants?: EventShoeVariant[];
 } 

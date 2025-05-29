@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, UnauthorizedException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, UnauthorizedException, Query, NotFoundException } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -6,11 +6,15 @@ import { Event } from './entities/event.entity';
 import { SupabaseAuthGuard } from '../../shared/guards/supabase-auth.guard';
 import { RequestWithUser } from '../../shared/interfaces/request.interface';
 import { QueryEventDto } from './dto/query-event.dto';
+import { ProfilesService } from '../profiles/profiles.service';
 
 @Controller('events')
 @UseGuards(SupabaseAuthGuard)
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly profilesService: ProfilesService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -22,7 +26,13 @@ export class EventsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return await this.eventsService.create(req.user.id, createEventDto, token);
+    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
+    
+    if (!profile) {
+      throw new NotFoundException('User profile not found');
+    }
+
+    return await this.eventsService.create(profile.id.toString(), createEventDto, token);
   }
 
   @Get()

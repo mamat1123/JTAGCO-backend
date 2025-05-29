@@ -13,6 +13,32 @@ export class CustomerService {
     private readonly companiesService: CompaniesService,
   ) {}
 
+  private async generateCustomerId(token: string): Promise<string> {
+    const client = await this.supabaseService.getUserClient(token);
+    
+    // Get the latest customer ID
+    const { data: latestCustomer, error } = await client
+      .from('customer')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+      console.error('Error fetching latest customer ID:', error);
+      throw new Error('Failed to generate customer ID');
+    }
+
+    // If no customers exist yet, start with 1
+    if (!latestCustomer) {
+      return '1';
+    }
+
+    // Increment the last number
+    const nextNumber = parseInt(latestCustomer.id) + 1;
+    return nextNumber.toString();
+  }
+
   async create(userId: string, createCustomerDto: CreateCustomerDto, token: string): Promise<Customer> {
     // Verify company exists before creating customer
     const company = await this.companiesService.findOne(createCustomerDto.company_id, userId, token);
@@ -24,14 +50,25 @@ export class CustomerService {
     // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
 
+    const customerId = await this.generateCustomerId(token);
+    console.log('customerId', customerId);
+
+    const customerData = {
+      ...createCustomerDto,
+      id: customerId,
+    };
+
     const { data: customer, error } = await client
       .from('customer')
-      .insert(createCustomerDto)
+      .insert(customerData)
       .select()
       .single();
 
     if (error) {
       console.error('Supabase error:', error);
+      if (error.code === '23505') {
+        throw new BadRequestException('A customer with this information already exists');
+      }
       throw new Error('Failed to create customer');
     }
 

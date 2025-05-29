@@ -4,6 +4,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { QueryEventDto } from './dto/query-event.dto';
+import { formatDateForDatabase } from '../../shared/utils/date.util';
 
 @Injectable()
 export class EventsService {
@@ -13,22 +14,97 @@ export class EventsService {
 
   async create(userId: string, createEventDto: CreateEventDto, token: string): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
-    const { data: event, error } = await client
+    
+    // Start a transaction
+    const { data: event, error: eventError } = await client
       .from('events')
-      .insert(createEventDto)
-      .select(`
-        *,
-        companies:company_id (name),
-        profiles:id (fullname)
-      `)
+      .insert({
+        description: createEventDto.description,
+        scheduled_at: formatDateForDatabase(createEventDto.scheduled_at),
+        test_start_at: formatDateForDatabase(createEventDto.test_start_at),
+        test_end_at: formatDateForDatabase(createEventDto.test_end_at),
+        main_type_id: createEventDto.main_type_id,
+        sub_type_id: createEventDto.sub_type_id,
+        company_id: createEventDto.company_id,
+        customer_id: createEventDto.customer_id,
+        user_id: userId,
+      })
+      .select()
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (eventError) {
+      console.error('Supabase error:', eventError);
       throw new Error('Failed to create event');
     }
 
-    return this.transformEventData(event);
+    // Insert event shoe variants if products exist
+    if (createEventDto.products && createEventDto.products.length > 0) {
+      const eventShoeVariants = createEventDto.products.map(product => ({
+        event_id: event.id,
+        shoe_variant_id: product.variant_id,
+        quantity: product.quantity,
+      }));
+
+      const { error: variantsError } = await client
+        .from('event_shoe_variants')
+        .insert(eventShoeVariants);
+
+      if (variantsError) {
+        console.error('Supabase error:', variantsError);
+        throw new Error('Failed to create event shoe variants');
+      }
+    }
+
+    // Insert event images if image_urls exist
+    if (createEventDto.image_urls && createEventDto.image_urls.length > 0) {
+      const eventImages = createEventDto.image_urls.map(url => ({
+        event_id: event.id,
+        url,
+        type: 'plan',
+      }));
+
+      const { error: imagesError } = await client
+        .from('event_images')
+        .insert(eventImages);
+
+      if (imagesError) {
+        console.error('Supabase error:', imagesError);
+        throw new Error('Failed to create event images');
+      }
+    }
+
+    // Fetch the complete event with all relations
+    const { data: completeEvent, error: fetchError } = await client
+      .from('events')
+      .select(`
+        *,
+        companies:company_id (name),
+        profiles:user_id (fullname),
+        event_images!event_images_event_id_fkey (url),
+        event_shoe_variants!event_shoe_variants_event_id_fkey (
+          quantity,
+          shoe_variants:shoe_variant_id (
+            id,
+            sku,
+            attributes,
+            price,
+            stock,
+            products:product_id (
+              id,
+              name
+            )
+          )
+        )
+      `)
+      .eq('id', event.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Supabase error:', fetchError);
+      throw new Error('Failed to fetch created event');
+    }
+
+    return this.transformEventData(completeEvent);
   }
 
   async findAll(token: string, query: QueryEventDto): Promise<Event[]> {

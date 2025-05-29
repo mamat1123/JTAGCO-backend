@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put, Delete } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { AuthGuard } from '../../shared/guards/auth.guard';
@@ -74,5 +74,14 @@ export class CompaniesController {
     @Body() updateCompanyDto: UpdateCompanyDto
   ): Promise<Company> {
     return this.companiesService.update(id, auth.user.id, updateCompanyDto, auth.token);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(
+    @AuthUser() auth: AuthUserData,
+    @Param('id') id: string
+  ): Promise<void> {
+    return this.companiesService.delete(id, auth.user.id, auth.token);
   }
 }

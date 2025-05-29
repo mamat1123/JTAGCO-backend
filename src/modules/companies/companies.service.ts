@@ -18,7 +18,6 @@ export class CompaniesService {
   ) {}
 
   async create(profileId: string, createCompanyDto: CreateCompanyDto, token: string): Promise<Company> {
-    console.log('Starting create with profileId:', profileId, 'createCompanyDto:', createCompanyDto);
     
     try {
       // Generate company ID using the profile ID
@@ -26,8 +25,6 @@ export class CompaniesService {
         token,
         profileId
       );
-
-      console.log('Company ID:', companyId);
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
 
@@ -55,7 +52,6 @@ export class CompaniesService {
   }
 
   async findAll(userId: string, searchParams: SearchCompanyDto, token: string): Promise<{ data: Company[], total: number }> {
-    console.log('Starting findAll with userId:', userId, 'searchParams:', searchParams);
     
     try {
       const { page = 1, limit = 10, search, name, province, email, user_id } = searchParams;
@@ -94,13 +90,11 @@ export class CompaniesService {
 
       // Get total count
       const { count, data: companies } = await query;
-      console.log(companies);
 
       // Get paginated data
       const { data, error } = await query
         .range(start, end)
         .order('created_at', { ascending: false });
-      console.log(data);
 
       if (error) {
         console.error('Supabase error:', error);
@@ -118,7 +112,6 @@ export class CompaniesService {
   }
 
   async findByUserId(userId: string, pagination: PaginationDto, token: string): Promise<{ data: Company[], total: number }> {
-    console.log('Starting findByUserId with userId:', userId, 'pagination:', pagination);
     
     try {
       const { page = 1, limit = 10 } = pagination;
@@ -161,7 +154,6 @@ export class CompaniesService {
   }
 
   async findOne(id: string, userId: string, token: string): Promise<Company> {
-    console.log('Starting findOne with id:', id);
     
     try {
       // Get authenticated client for RLS
@@ -191,8 +183,6 @@ export class CompaniesService {
         ...company,
         customers,
       };
-
-      console.log('Combined response:', result);
       return result;
     } catch (error) {
       console.error('Error in findOne:', error);
@@ -201,7 +191,6 @@ export class CompaniesService {
   }
 
   async update(id: string, userId: string, updateCompanyDto: UpdateCompanyDto, token: string): Promise<Company> {
-    console.log('Starting update with id:', id, 'updateCompanyDto:', updateCompanyDto);
     
     try {
       // Get authenticated client for RLS
@@ -235,6 +224,40 @@ export class CompaniesService {
       return updatedCompany;
     } catch (error) {
       console.error('Error in update:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string, userId: string, token: string): Promise<void> {
+    
+    try {
+      // Get authenticated client for RLS
+      const client = await this.supabaseService.getUserClient(token);
+
+      // First, check if the company exists and belongs to the user
+      const { data: existingCompany, error: checkError } = await client
+        .from('companies')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingCompany) {
+        console.error('Company lookup error:', checkError);
+        throw new NotFoundException(`Company with ID ${id} not found`);
+      }
+
+      // Delete the company
+      const { error: deleteError } = await client
+        .from('companies')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw new Error(`Failed to delete company: ${deleteError.message}`);
+      }
+    } catch (error) {
+      console.error('Error in delete:', error);
       throw error;
     }
   }

@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsEmail, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsUrl, IsEmpty } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateCustomerDto {
   @IsString()
@@ -15,8 +16,9 @@ export class CreateCustomerDto {
   @IsOptional()
   position?: string;
 
-  @IsEmail()
   @IsOptional()
+  @Transform(({ value }) => value === '' ? null : value)
+  @IsEmail()
   email?: string;
 
   @IsString()
