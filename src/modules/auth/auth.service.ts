@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { SupabaseService } from '../../shared/services/supabase.service';
+import { ProfileStatus } from '../profiles/dto/approve-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -11,7 +12,7 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     try {
-      const { username, password, phone, role, email } = registerDto;
+      const { username, password, phone, role, email, fullname } = registerDto;
 
       // Register user with Supabase Auth
       const mockEmail = `${username}@jtagco.com`;
@@ -25,7 +26,8 @@ export class AuthService {
             phone,
             role,
             user_email: mockEmail,
-            email
+            email,
+            fullname
           }
         }
       });
@@ -59,6 +61,7 @@ export class AuthService {
         user: {
           id: authData.user.id,
           email: authData.user.email,
+          fullname: profile.fullname,
           username: profile.username,
           phone: profile.phone,
           role: profile.role,
@@ -95,11 +98,12 @@ export class AuthService {
         .from('profiles')
         .select('*')
         .eq('user_id', authData.user.id)
+        .eq('status', ProfileStatus.APPROVED)
         .single();
 
       if (profileError) {
         console.error('Profile Fetch Error:', profileError);
-        throw new UnauthorizedException('Failed to fetch user profile');
+        throw new UnauthorizedException('Your account is not approved yet');
       }
 
       return {

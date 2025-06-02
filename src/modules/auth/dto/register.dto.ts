@@ -20,4 +20,8 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   role: string;
+
+  @IsString()
+  @IsNotEmpty()
+  fullname: string;
 } 

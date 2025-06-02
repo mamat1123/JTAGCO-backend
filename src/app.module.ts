@@ -13,6 +13,7 @@ import { EventsModule } from './modules/events/events.module';
 import { EventMainTypesModule } from './modules/event-main-types/event-main-types.module';
 import { EventSubTypesModule } from './modules/event-sub-types/event-sub-types.module';
 import { BusinessTypesModule } from './modules/business-types/business-types.module';
+import { EventCheckinsModule } from './modules/event-checkins/event-checkins.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { BusinessTypesModule } from './modules/business-types/business-types.mod
     EventMainTypesModule,
     EventSubTypesModule,
     BusinessTypesModule,
+    EventCheckinsModule,
   ],
 })
 export class AppModule {}
