@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import supabaseConfig from './config/supabase.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { CustomerModule } from './modules/customers/customer.module';
 import { SharedModule } from './shared/shared.module';
-import { getTypeOrmConfig } from './config/typeorm.config';
 import { ProductsModule } from './modules/products/products.module';
 import { EventsModule } from './modules/events/events.module';
 import { EventMainTypesModule } from './modules/event-main-types/event-main-types.module';
@@ -20,11 +18,6 @@ import { EventCheckinsModule } from './modules/event-checkins/event-checkins.mod
     ConfigModule.forRoot({
       isGlobal: true,
       load: [supabaseConfig],
-    }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
-      inject: [ConfigService],
     }),
     SharedModule,
     AuthModule,
@@ -39,4 +32,4 @@ import { EventCheckinsModule } from './modules/event-checkins/event-checkins.mod
     EventCheckinsModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
