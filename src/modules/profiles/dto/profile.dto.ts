@@ -29,7 +29,7 @@ export class ProfileDto {
   @ApiProperty({ 
     description: 'Profile status',
     enum: ProfileStatus,
-    example: ProfileStatus.WAIT_FOR_APPROVAL
+    example: ProfileStatus.WAIT_FOR_APPROVE
   })
   status: ProfileStatus;
 } 

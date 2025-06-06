@@ -4,7 +4,7 @@ import { IsEnum } from 'class-validator';
 export enum ProfileStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  WAIT_FOR_APPROVAL = 'wait_for_approval'
+  WAIT_FOR_APPROVE = 'wait_for_approve'
 }
 
 export class ApproveProfileDto {
