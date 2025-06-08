@@ -9,7 +9,7 @@ import { FindAllShoeRequestDto } from './dto/find-all-shoe-request.dto';
 export class ShoeRequestsService {
   constructor(
     private readonly supabaseService: SupabaseService,
-  ) {}
+  ) { }
 
   async create(userId: string, createShoeRequestDto: CreateShoeRequestDto, token: string): Promise<ShoeRequestDto> {
     const client = await this.supabaseService.getUserClient(token);
@@ -33,8 +33,8 @@ export class ShoeRequestsService {
   }
 
   async findAll(
-    token: string, 
-    eventId?: string, 
+    token: string,
+    eventId?: string,
     query?: FindAllShoeRequestDto,
   ): Promise<{ data: ShoeRequestDto[], total: number }> {
     const client = await this.supabaseService.getUserClient(token);
@@ -85,7 +85,7 @@ export class ShoeRequestsService {
       if (query.status) {
         queryBuilder = queryBuilder.eq('status', query.status);
       }
-      
+
       if (query.searchTerm) {
         queryBuilder = queryBuilder.or(`events.description.ilike.%${query.searchTerm}%,product_variants.products.name.ilike.%${query.searchTerm}%,requesters.fullname.ilike.%${query.searchTerm}%`);
       }
@@ -167,6 +167,22 @@ export class ShoeRequestsService {
     if (error) {
       console.error('Supabase error:', error);
       throw new NotFoundException(`Shoe request with ID ${id} not found`);
+    }
+
+    if (status === ShoeRequestStatus.APPROVED) {
+
+      const { error: insertError } = await client
+        .from('event_shoe_variants')
+        .insert({
+          event_id: shoeRequest.event_id,
+          shoe_variant_id: shoeRequest.variant_id,
+          quantity: shoeRequest.quantity,
+        });
+
+      if (insertError) {
+        console.error('Supabase error:', insertError);
+        throw new Error('Failed to create event shoe variant record');
+      }
     }
 
     return this.transformShoeRequestData(shoeRequest);
