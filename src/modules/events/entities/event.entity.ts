@@ -78,6 +78,7 @@ export class Event {
   companyName?: string;
   userFullName?: string;
   subTypeName?: string;
+  mainTypeName?: string;
   eventImages?: EventImage[];
   eventShoeVariants?: EventShoeVariant[];
 } 

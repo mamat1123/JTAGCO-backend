@@ -1,16 +1,10 @@
 import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { EventStatus } from '../entities/event.entity';
 import { Type } from 'class-transformer';
+import { CreateShoeRequestDto } from '../../shoe-requests/dto/create-shoe-request.dto';
+import { OmitType } from '@nestjs/mapped-types';
 
-class ProductDto {
-  @IsString()
-  @IsNotEmpty()
-  variant_id: string;
-
-  @IsNumber()
-  @IsNotEmpty()
-  quantity: number;
-}
+export class CreateShoeRequestWithoutEventDto extends OmitType(CreateShoeRequestDto, ['event_id'] as const) { }
 
 export class CreateEventDto {
   @IsNotEmpty()
@@ -21,9 +15,9 @@ export class CreateEventDto {
   @IsString()
   main_type_id: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  sub_type_id: string;
+  sub_type_id?: string;
 
   @IsOptional()
   @IsString()
@@ -57,6 +51,6 @@ export class CreateEventDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ProductDto)
-  products?: ProductDto[];
+  @Type(() => CreateShoeRequestWithoutEventDto)
+  products?: (CreateShoeRequestWithoutEventDto)[];
 } 

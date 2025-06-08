@@ -5,26 +5,28 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { QueryEventDto } from './dto/query-event.dto';
 import { formatDateForDatabase } from '../../shared/utils/date.util';
+import { ShoeRequestsService } from '../shoe-requests/shoe-requests.service';
 
 @Injectable()
 export class EventsService {
   constructor(
     private readonly supabaseService: SupabaseService,
+    private readonly shoeRequestsService: ShoeRequestsService,
   ) { }
 
   async create(userId: string, createEventDto: CreateEventDto, token: string): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
-    
+
     // Start a transaction
     const { data: event, error: eventError } = await client
       .from('events')
       .insert({
         description: createEventDto.description,
         scheduled_at: formatDateForDatabase(createEventDto.scheduled_at),
-        test_start_at: formatDateForDatabase(createEventDto.test_start_at),
-        test_end_at: formatDateForDatabase(createEventDto.test_end_at),
+        test_start_at: createEventDto.test_start_at ? formatDateForDatabase(createEventDto.test_start_at) : null,
+        test_end_at: createEventDto.test_end_at ? formatDateForDatabase(createEventDto.test_end_at) : null,
         main_type_id: createEventDto.main_type_id,
-        sub_type_id: createEventDto.sub_type_id,
+        sub_type_id: createEventDto.sub_type_id || null,
         company_id: createEventDto.company_id,
         customer_id: createEventDto.customer_id,
         user_id: userId,
@@ -39,20 +41,14 @@ export class EventsService {
 
     // Insert event shoe variants if products exist
     if (createEventDto.products && createEventDto.products.length > 0) {
-      const eventShoeVariants = createEventDto.products.map(product => ({
+      const shoeRequests = createEventDto.products.map(product => ({
         event_id: event.id,
-        shoe_variant_id: product.variant_id,
+        variant_id: product.variant_id,
         quantity: product.quantity,
+        return_date: product.return_date || undefined,
       }));
 
-      const { error: variantsError } = await client
-        .from('event_shoe_variants')
-        .insert(eventShoeVariants);
-
-      if (variantsError) {
-        console.error('Supabase error:', variantsError);
-        throw new Error('Failed to create event shoe variants');
-      }
+      await this.shoeRequestsService.createMany(userId, shoeRequests, token);
     }
 
     // Insert event images if image_urls exist
@@ -115,7 +111,8 @@ export class EventsService {
         *,
         companies:company_id (name),
         profiles:user_id (fullname),
-        sub_types:sub_type_id (name)
+        sub_types:sub_type_id (name),
+        main_types:main_type_id (name)
       `)
       .order('created_at', { ascending: false });
 
@@ -177,6 +174,7 @@ export class EventsService {
         companies:company_id (name),
         profiles:user_id (fullname),
         sub_types:sub_type_id (name),
+        main_types:main_type_id (name),
         event_images!event_images_event_id_fkey (url),
         event_checkins!event_checkins_event_id_fkey (detail, created_at)
       `)
@@ -231,6 +229,7 @@ export class EventsService {
       companyName: event.companies?.name,
       userFullName: event.profiles?.fullname,
       subTypeName: event.sub_types?.name,
+      mainTypeName: event.main_types?.name,
       eventImages: event.event_images?.map((image: { url: string }) => image.url),
       eventCheckins: event.event_checkins?.map((checkin: { detail: string, created_at: string }) => ({
         detail: checkin.detail,
@@ -241,6 +240,7 @@ export class EventsService {
       sub_types: undefined,
       event_images: undefined,
       event_checkins: undefined,
+      main_types: undefined,
     };
   }
 } 
