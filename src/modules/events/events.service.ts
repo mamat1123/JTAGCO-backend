@@ -249,8 +249,6 @@ export class EventsService {
       .select('*')
       .eq('event_id', eventId);
 
-    console.log(variants);
-
     if (variantsError) {
       console.error('Supabase error:', variantsError);
       throw new Error('Failed to fetch event shoe variants');
