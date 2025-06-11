@@ -75,6 +75,29 @@ export class EventCheckinsService {
       }
     }
 
+    // Check current event status before updating
+    const { data: event, error: getEventError } = await client
+      .from('events')
+      .select('status')
+      .eq('id', eventId)
+      .single();
+
+    if (getEventError) {
+      throw new Error(`Failed to get event status: ${getEventError.message}`);
+    }
+
+    // Only update if not already completed
+    if (event.status !== 'completed') {
+      const { error: eventError } = await client
+        .from('events')
+        .update({ status: 'completed' })
+        .eq('id', eventId);
+
+      if (eventError) {
+        throw new Error(`Failed to update event status: ${eventError.message}`);
+      }
+    }
+
     return {
       id: checkin.id,
       eventId: checkin.event_id,
