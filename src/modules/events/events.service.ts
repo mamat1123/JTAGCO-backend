@@ -6,6 +6,7 @@ import { Event } from './entities/event.entity';
 import { QueryEventDto } from './dto/query-event.dto';
 import { formatDateForDatabase } from '../../shared/utils/date.util';
 import { ShoeRequestsService } from '../shoe-requests/shoe-requests.service';
+import { Step, StepStatus } from './dto/event-request-timeline.dto';
 
 @Injectable()
 export class EventsService {
@@ -220,6 +221,112 @@ export class EventsService {
     if (error) {
       console.error('Supabase error:', error);
       throw new Error('Failed to delete event');
+    }
+  }
+
+  async getEventRequestTimeline(eventId: string, token: string): Promise<Step[]> {
+    const client = await this.supabaseService.getUserClient(token);
+
+    // Get shoe requests
+    const { data: shoeRequests, error: shoeRequestsError } = await client
+      .from('shoe_requests')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: true });
+
+    if (shoeRequestsError) {
+      console.error('Supabase error:', shoeRequestsError);
+      throw new Error('Failed to fetch shoe requests');
+    }
+
+    if (shoeRequests.length === 0) {
+      return []
+    }
+
+    // Get event shoe variants
+    const { data: variants, error: variantsError } = await client
+      .from('event_shoe_variants')
+      .select('*')
+      .eq('event_id', eventId);
+
+    console.log(variants);
+
+    if (variantsError) {
+      console.error('Supabase error:', variantsError);
+      throw new Error('Failed to fetch event shoe variants');
+    }
+
+    const variantIds = variants.map(v => v.id);
+
+    // Get shoe returns
+    const { data: returns, error: returnsError } = await client
+      .from('shoe_returns')
+      .select('*')
+      .in('event_shoe_variant_id', variantIds.length > 0 ? variantIds : ['']);
+
+    if (returnsError) {
+      console.error('Supabase error:', returnsError);
+      throw new Error('Failed to fetch shoe returns');
+    }
+
+    const firstRequest = shoeRequests[0];
+    const allApproved = shoeRequests.every(r => r.status === 'approved');
+    const anyApproved = shoeRequests.some(r => r.status === 'approved');
+    const received = variants.some(v => v.status === 'received');
+    const latestReturn = returns.sort((a, b) =>
+      new Date(b.returned_at).getTime() - new Date(a.returned_at).getTime()
+    )[0];
+
+    const steps: Step[] = [
+      {
+        id: 1,
+        title: 'เริ่มต้น',
+        description: 'ขอเบิกสินค้า',
+        date: firstRequest.created_at,
+        status: StepStatus.COMPLETED,
+      },
+      {
+        id: 2,
+        title: 'อนุมัติ',
+        description: 'สินค้าได้รับการอนุมัติจากผู้จัดการ',
+        date: allApproved
+          ? shoeRequests
+            .filter(r => r.status === 'approved')
+            .sort((a, b) => new Date(b.approved_at).getTime() - new Date(a.approved_at).getTime())[0]?.approved_at
+          : '',
+        status: allApproved ? StepStatus.COMPLETED : StepStatus.PENDING,
+      },
+      {
+        id: 3,
+        title: 'ได้รับสินค้า',
+        description: 'ได้รับสินค้าจากผู้จัดการ',
+        date: received ? variants.find(v => v.status === 'received')?.updated_at : '',
+        status: received ? StepStatus.COMPLETED : (anyApproved ? StepStatus.CURRENT : StepStatus.PENDING),
+      },
+      {
+        id: 4,
+        title: 'ส่งคืนสินค้า',
+        description: 'ส่งคืนสินค้าให้กับผู้จัดการ',
+        date: latestReturn ? latestReturn.returned_at : '',
+        status: latestReturn ? StepStatus.COMPLETED : (received ? StepStatus.CURRENT : StepStatus.PENDING),
+      },
+    ];
+
+    return steps;
+  }
+
+  async updateEventShoeVariantsToReceive(eventId: string, token: string): Promise<void> {
+    const client = await this.supabaseService.getUserClient(token);
+
+    // Update all event shoe variants for the given event to 'received' status
+    const { error } = await client
+      .from('event_shoe_variants')
+      .update({ status: 'received', updated_at: new Date().toISOString() })
+      .eq('event_id', eventId);
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw new Error('Failed to update event shoe variants status');
     }
   }
 

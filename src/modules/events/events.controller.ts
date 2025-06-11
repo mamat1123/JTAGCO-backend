@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, UnauthorizedException, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, UnauthorizedException, Query, NotFoundException, Headers } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -7,6 +7,7 @@ import { SupabaseAuthGuard } from '../../shared/guards/supabase-auth.guard';
 import { RequestWithUser } from '../../shared/interfaces/request.interface';
 import { QueryEventDto } from './dto/query-event.dto';
 import { ProfilesService } from '../profiles/profiles.service';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('events')
 @UseGuards(SupabaseAuthGuard)
@@ -83,5 +84,30 @@ export class EventsController {
       throw new UnauthorizedException('No token provided');
     }
     await this.eventsService.remove(req.user.id, id, token);
+  }
+
+  @Get(':id/request-timeline')
+  @ApiOperation({ summary: 'Get event request timeline' })
+  @ApiResponse({ status: 200, description: 'Returns the event request timeline' })
+  async getEventRequestTimeline(
+    @Param('id') id: string,
+    @Headers('authorization') token: string,
+  ) {
+    return this.eventsService.getEventRequestTimeline(id, token);
+  }
+
+  @Patch(':id/receive-shoe-variants')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Update all event shoe variants status to received' })
+  @ApiResponse({ status: 204, description: 'Event shoe variants status updated successfully' })
+  @ApiResponse({ status: 404, description: 'Event not found' })
+  async updateEventShoeVariantsToReceive(
+    @Param('id') id: string,
+    @Headers('authorization') token: string,
+  ): Promise<void> {
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+    await this.eventsService.updateEventShoeVariantsToReceive(id, token);
   }
 } 
