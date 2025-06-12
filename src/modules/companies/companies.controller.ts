@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put, Delete, Request } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { AuthGuard } from '../../shared/guards/auth.guard';
@@ -8,6 +8,7 @@ import { AuthUser, AuthUserData } from '../../shared/decorators/auth-user.decora
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { ProfilesService } from '../profiles/profiles.service';
+import { InactiveCompaniesDto } from './dto/inactive-companies.dto';
 
 @Controller('companies')
 @UseGuards(AuthGuard)
@@ -15,7 +16,7 @@ export class CompaniesController {
   constructor(
     private readonly companiesService: CompaniesService,
     private readonly profilesService: ProfilesService,
-  ) {}  
+  ) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -25,7 +26,7 @@ export class CompaniesController {
   ): Promise<Company> {
     // Get profile ID from profiles service
     const profile = await this.profilesService.findProfileIdByUserId(auth.user.id, auth.token);
-    
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
@@ -43,6 +44,30 @@ export class CompaniesController {
     @Query() searchParams: SearchCompanyDto
   ): Promise<{ data: Company[], total: number }> {
     return this.companiesService.findAll(auth.user.id, searchParams, auth.token);
+  }
+
+  @Get('inactive')
+  @UseGuards(AuthGuard)
+  async findInactiveCompanies(
+    @AuthUser() auth: AuthUserData,
+    @Query() params: InactiveCompaniesDto
+  ) {
+    return this.companiesService.findInactiveCompanies(
+      params,
+      auth.token
+    );
+  }
+
+  @Get('inactive/stats')
+  @UseGuards(AuthGuard)
+  async findInactiveCompaniesStats(
+    @AuthUser() auth: AuthUserData,
+    @Query() params: InactiveCompaniesDto
+  ) {
+    return this.companiesService.findInactiveCompaniesStats(
+      params,
+      auth.token
+    );
   }
 
   @Get('user/:userId')

@@ -7,6 +7,8 @@ import { CustomerService } from '../customers/customer.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyIdService } from './services/company-id.service';
+import { InactiveCompaniesDto } from './dto/inactive-companies.dto';
+import { InactiveCompany, InactiveCompanyStats } from './entities/inactive-company.entity';
 
 @Injectable()
 export class CompaniesService {
@@ -15,10 +17,10 @@ export class CompaniesService {
     private readonly companyIdService: CompanyIdService,
     @Inject(forwardRef(() => CustomerService))
     private customerService: CustomerService
-  ) {}
+  ) { }
 
   async create(profileId: string, createCompanyDto: CreateCompanyDto, token: string): Promise<Company> {
-    
+
     try {
       // Generate company ID using the profile ID
       const companyId = await this.companyIdService.generateCompanyId(
@@ -52,7 +54,7 @@ export class CompaniesService {
   }
 
   async findAll(userId: string, searchParams: SearchCompanyDto, token: string): Promise<{ data: Company[], total: number }> {
-    
+
     try {
       const { page = 1, limit = 10, search, name, province, email, user_id } = searchParams;
       const start = (page - 1) * limit;
@@ -60,7 +62,7 @@ export class CompaniesService {
 
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
-      
+
       let query = client
         .from('companies')
         .select('*', { count: 'exact' });
@@ -112,7 +114,7 @@ export class CompaniesService {
   }
 
   async findByUserId(userId: string, pagination: PaginationDto, token: string): Promise<{ data: Company[], total: number }> {
-    
+
     try {
       const { page = 1, limit = 10 } = pagination;
       const start = (page - 1) * limit;
@@ -154,7 +156,7 @@ export class CompaniesService {
   }
 
   async findOne(id: string, userId: string, token: string): Promise<Company> {
-    
+
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -191,7 +193,7 @@ export class CompaniesService {
   }
 
   async update(id: string, userId: string, updateCompanyDto: UpdateCompanyDto, token: string): Promise<Company> {
-    
+
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -229,7 +231,7 @@ export class CompaniesService {
   }
 
   async delete(id: string, userId: string, token: string): Promise<void> {
-    
+
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -258,6 +260,67 @@ export class CompaniesService {
       }
     } catch (error) {
       console.error('Error in delete:', error);
+      throw error;
+    }
+  }
+
+  async findInactiveCompaniesStats(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompanyStats }> {
+    try {
+      const { months = 3 } = params;
+      const client = await this.supabaseService.getUserClient(token);
+      const { data, error } = await client.rpc('get_inactive_companies_summary', { months_back: months });
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Failed to fetch inactive companies stats');
+      }
+
+      return data[0]
+    } catch (error) {
+      console.error('Error in findInactiveCompaniesStats:', error);
+      throw error;
+    }
+  }
+
+  async findInactiveCompanies(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompany[] }> {
+    try {
+      const { page = 1, limit = 10, months = 3, sortBy = 'last_event_updated_at', sortOrder = 'desc' } = params;
+      const start = (page - 1) * limit;
+      const end = start + limit - 1;
+
+      // Get authenticated client for RLS
+      const client = await this.supabaseService.getUserClient(token);
+
+
+      // Call the RPC function to get inactive companies
+      const { data, error } = await client
+        .rpc('get_inactive_companies', {
+          months_back: months,
+          start_row: start,
+          end_row: end,
+          sort_by: sortBy ?? 'last_event_updated_at',
+          sort_order: sortOrder ?? 'desc'
+        });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Failed to fetch inactive companies');
+      }
+      // Map to InactiveCompany type
+      const cleanedCompanies = data.map(company => ({
+        id: company.company_id,
+        name: company.company_name,
+        province: company.province,
+        branch: company.branch,
+        totalEmployees: company.total_employees,
+        credit: company.credit,
+        lastEventUpdatedAt: company.last_event_updated_at
+      }));
+
+      return {
+        data: cleanedCompanies,
+      };
+    } catch (error) {
+      console.error('Error in findInactiveCompanies:', error);
       throw error;
     }
   }
