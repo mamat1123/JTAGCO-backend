@@ -9,6 +9,7 @@ import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 import { InactiveCompaniesDto } from './dto/inactive-companies.dto';
+import { TransferCompanyDto } from './dto/transfer-company.dto';
 
 @Controller('companies')
 @UseGuards(AuthGuard)
@@ -108,5 +109,19 @@ export class CompaniesController {
     @Param('id') id: string
   ): Promise<void> {
     return this.companiesService.delete(id, auth.user.id, auth.token);
+  }
+
+  @Put(':id/transfer')
+  @HttpCode(HttpStatus.OK)
+  async transfer(
+    @AuthUser() auth: AuthUserData,
+    @Param('id') id: string,
+    @Body() transferCompanyDto: TransferCompanyDto
+  ): Promise<Company> {
+    return this.companiesService.transfer(
+      id,
+      transferCompanyDto.user_id,
+      auth.token
+    );
   }
 }

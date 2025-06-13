@@ -324,4 +324,40 @@ export class CompaniesService {
       throw error;
     }
   }
+
+  async transfer(id: string, newUserId: number, token: string): Promise<Company> {
+    try {
+      // Get authenticated client for RLS
+      const client = await this.supabaseService.getUserClient(token);
+
+      // First, verify the company exists and belongs to the current user
+      const { data: company, error: companyError } = await client
+        .from('companies')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (companyError || !company) {
+        throw new NotFoundException(`Company with ID ${id} not found or you don't have permission to transfer it`);
+      }
+
+      // Update the company's user_id
+      const { data: updatedCompany, error: updateError } = await client
+        .from('companies')
+        .update({ user_id: newUserId.toString() }) // Convert to string since user_id is stored as string
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Supabase error:', updateError);
+        throw new Error(`Failed to transfer company: ${updateError.message}`);
+      }
+
+      return updatedCompany;
+    } catch (error) {
+      console.error('Error in transfer:', error);
+      throw error;
+    }
+  }
 } 
