@@ -5,7 +5,7 @@ import { SupabaseService } from '../../../shared/services/supabase.service';
 export class CompanyIdService {
   constructor(
     private readonly supabaseService: SupabaseService,
-  ) {}
+  ) { }
 
   /**
    * Generates a company ID with the following format:
@@ -18,13 +18,13 @@ export class CompanyIdService {
    */
   async generateCompanyId(token: string, profileId: string): Promise<string> {
     const now = new Date();
-    
+
     // Get Buddhist year (current year + 543)
     const buddhistYear = (now.getFullYear() + 543).toString().slice(-2);
-    
+
     // Get month with leading zero
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    
+
     // Use the profile ID, padded to 2 digits
     const formattedUserId = profileId.padStart(2, '0');
 
@@ -34,11 +34,12 @@ export class CompanyIdService {
     // Get the count of companies for this user in the current month
     try {
       console.log('Querying companies with pattern:', `${buddhistYear}${month}${formattedUserId}%`);
-      
-      const { count, error } = await client
+      const { data, error } = await client
         .from('companies')
-        .select('id', { count: 'exact', head: true })
-        .like('id', `${buddhistYear}${month}${formattedUserId}%`);
+        .select('id')
+        .like('id', `${buddhistYear}${month}${formattedUserId}%`)
+        .order('id', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Supabase error details:', {
@@ -50,9 +51,14 @@ export class CompanyIdService {
         });
         throw new Error(`Failed to count companies: ${error.message}`);
       }
-
+      let sequenceNumber = 1;
+      if (data && data.length > 0) {
+        const lastId = data[0].id;
+        const lastSeq = parseInt(lastId.slice(-4), 10); // get last 4 digits
+        sequenceNumber = lastSeq + 1;
+      }
       // Format the count with leading zeros (4 digits)
-      const countStr = ((count || 0) + 1).toString().padStart(4, '0');
+      const countStr = sequenceNumber.toString().padStart(4, '0');
 
       // Combine all parts: YY + MM + UU + CCCC
       const companyId = `${buddhistYear}${month}${formattedUserId}${countStr}`;
