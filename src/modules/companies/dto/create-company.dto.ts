@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateCompanyDto {
   @IsNotEmpty()
@@ -42,7 +43,10 @@ export class CreateCompanyDto {
   province?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
+  @Min(10000)
+  @Max(99999)
   zip_code?: number;
 
   @IsOptional()
@@ -86,11 +90,20 @@ export class CreateCompanyDto {
   total_employees?: number;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return parseInt(value, 10);
+    }
+    return value;
+  })
   @IsNumber()
+  @Min(0)
+  @Max(999)
   credit?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   order_cycle?: number;
 
   @IsOptional()
