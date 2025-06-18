@@ -43,10 +43,7 @@ export class CreateCompanyDto {
   province?: string;
 
   @IsOptional()
-  @Type(() => Number)
   @IsNumber()
-  @Min(10000)
-  @Max(99999)
   zip_code?: number;
 
   @IsOptional()
