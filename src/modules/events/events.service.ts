@@ -173,6 +173,7 @@ export class EventsService {
       .select(`
         *,
         companies:company_id (name),
+        customers:customer_id (contact_name, phone, email),
         profiles:user_id (fullname),
         sub_types:sub_type_id (name),
         main_types:main_type_id (name),
