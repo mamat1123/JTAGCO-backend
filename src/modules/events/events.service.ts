@@ -72,9 +72,10 @@ export class EventsService {
 
     // Insert event product tags if tagged_products exist
     if (createEventDto.tagged_products && createEventDto.tagged_products.length > 0) {
-      const eventProductTags = createEventDto.tagged_products.map(productId => ({
+      const eventProductTags = createEventDto.tagged_products.map(taggedProduct => ({
         event_id: event.id,
-        product_id: productId,
+        product_id: taggedProduct.product_id,
+        price: taggedProduct.price,
       }));
 
       const { error: tagsError } = await client
@@ -111,6 +112,7 @@ export class EventsService {
         ),
         event_product_tags!event_product_tags_event_id_fkey (
           product_id,
+          price,
           products:product_id (
             id,
             name
@@ -140,6 +142,7 @@ export class EventsService {
         main_types:main_type_id (name),
         event_product_tags!event_product_tags_event_id_fkey (
           product_id,
+          price,
           products:product_id (
             id,
             name
@@ -234,6 +237,7 @@ export class EventsService {
         event_checkins!event_checkins_event_id_fkey (detail, created_at),
         event_product_tags!event_product_tags_event_id_fkey (
           product_id,
+          price,
           products:product_id (
             id,
             name
@@ -288,9 +292,10 @@ export class EventsService {
 
       // Insert new tags if provided
       if (tagged_products && tagged_products.length > 0) {
-        const eventProductTags = tagged_products.map(productId => ({
+        const eventProductTags = tagged_products.map(taggedProduct => ({
           event_id: id,
-          product_id: productId,
+          product_id: taggedProduct.product_id,
+          price: taggedProduct.price,
         }));
 
         const { error: insertError } = await client
@@ -318,6 +323,7 @@ export class EventsService {
         event_checkins!event_checkins_event_id_fkey (detail, created_at),
         event_product_tags!event_product_tags_event_id_fkey (
           product_id,
+          price,
           products:product_id (
             id,
             name
@@ -464,9 +470,10 @@ export class EventsService {
         detail: checkin.detail,
         created_at: checkin.created_at
       })),
-      taggedProducts: event.event_product_tags?.map((tag: { product_id: string, products: { id: string, name: string } }) => ({
+      taggedProducts: event.event_product_tags?.map((tag: { product_id: string, price: number, products: { id: string, name: string } }) => ({
         id: tag.product_id,
-        name: tag.products.name
+        name: tag.products.name,
+        price: tag.price
       })),
       companies: undefined,
       profiles: undefined,
