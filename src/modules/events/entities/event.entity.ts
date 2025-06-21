@@ -35,6 +35,7 @@ interface EventShoeVariant {
 interface TaggedProduct {
   id: string;
   name: string;
+  price: number;
 }
 
 @Entity('events')
