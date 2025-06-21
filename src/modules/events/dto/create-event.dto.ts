@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { CreateShoeRequestDto } from '../../shoe-requests/dto/create-shoe-request.dto';
 import { OmitType } from '@nestjs/mapped-types';
 import { ApiProperty } from '@nestjs/swagger';
+import { TaggedProductDto } from './tagged-product.dto';
 
 export class CreateShoeRequestWithoutEventDto extends OmitType(CreateShoeRequestDto, ['event_id'] as const) { }
 
@@ -68,7 +69,8 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
-  @ApiProperty({ description: 'Array of product IDs to tag with this event', required: false, type: [String] })
-  tagged_products?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => TaggedProductDto)
+  @ApiProperty({ description: 'Array of tagged products with prices', required: false, type: [TaggedProductDto] })
+  tagged_products?: TaggedProductDto[];
 } 
