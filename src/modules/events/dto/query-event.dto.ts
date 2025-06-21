@@ -36,4 +36,8 @@ export class QueryEventDto {
   @IsOptional()
   @IsString()
   user_id?: string;
+
+  @IsOptional()
+  @IsString()
+  tagged_product_id?: string;
 } 
