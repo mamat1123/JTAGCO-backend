@@ -32,6 +32,11 @@ interface EventShoeVariant {
   shoe_variants: ShoeVariant;
 }
 
+interface TaggedProduct {
+  id: string;
+  name: string;
+}
+
 @Entity('events')
 export class Event {
   @PrimaryGeneratedColumn('uuid')
@@ -81,4 +86,5 @@ export class Event {
   mainTypeName?: string;
   eventImages?: EventImage[];
   eventShoeVariants?: EventShoeVariant[];
+  taggedProducts?: TaggedProduct[];
 } 

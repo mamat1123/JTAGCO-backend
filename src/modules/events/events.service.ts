@@ -70,6 +70,23 @@ export class EventsService {
       }
     }
 
+    // Insert event product tags if tagged_products exist
+    if (createEventDto.tagged_products && createEventDto.tagged_products.length > 0) {
+      const eventProductTags = createEventDto.tagged_products.map(productId => ({
+        event_id: event.id,
+        product_id: productId,
+      }));
+
+      const { error: tagsError } = await client
+        .from('event_product_tags')
+        .insert(eventProductTags);
+
+      if (tagsError) {
+        console.error('Supabase error:', tagsError);
+        throw new Error('Failed to create event product tags');
+      }
+    }
+
     // Fetch the complete event with all relations
     const { data: completeEvent, error: fetchError } = await client
       .from('events')
@@ -90,6 +107,13 @@ export class EventsService {
               id,
               name
             )
+          )
+        ),
+        event_product_tags!event_product_tags_event_id_fkey (
+          product_id,
+          products:product_id (
+            id,
+            name
           )
         )
       `)
@@ -113,7 +137,14 @@ export class EventsService {
         companies:company_id (name),
         profiles:user_id (fullname),
         sub_types:sub_type_id (name),
-        main_types:main_type_id (name)
+        main_types:main_type_id (name),
+        event_product_tags!event_product_tags_event_id_fkey (
+          product_id,
+          products:product_id (
+            id,
+            name
+          )
+        )
       `)
       .order('created_at', { ascending: false });
 
@@ -144,6 +175,28 @@ export class EventsService {
 
     if (query.user_id) {
       queryBuilder = queryBuilder.eq('user_id', query.user_id);
+    }
+
+    // Filter by tagged_product_id if provided
+    if (query.tagged_product_id) {
+      // Get event IDs that have the specified tagged product
+      const { data: eventIds, error: eventIdsError } = await client
+        .from('event_product_tags')
+        .select('event_id')
+        .eq('product_id', query.tagged_product_id);
+
+      if (eventIdsError) {
+        console.error('Supabase error:', eventIdsError);
+        throw new Error('Failed to fetch events with tagged product');
+      }
+
+      if (eventIds.length === 0) {
+        // No events found with this tagged product, return empty array
+        return [];
+      }
+
+      const eventIdList = eventIds.map(item => item.event_id);
+      queryBuilder = queryBuilder.in('id', eventIdList);
     }
 
     const { data: events, error } = await queryBuilder;
@@ -178,7 +231,14 @@ export class EventsService {
         sub_types:sub_type_id (name),
         main_types:main_type_id (name),
         event_images!event_images_event_id_fkey (url),
-        event_checkins!event_checkins_event_id_fkey (detail, created_at)
+        event_checkins!event_checkins_event_id_fkey (detail, created_at),
+        event_product_tags!event_product_tags_event_id_fkey (
+          product_id,
+          products:product_id (
+            id,
+            name
+          )
+        )
       `)
       .eq('id', id)
       .single();
@@ -193,9 +253,13 @@ export class EventsService {
 
   async update(userId: string, id: string, updateEventDto: UpdateEventDto, token: string): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
+    
+    // Extract tagged_products from updateEventDto to handle separately
+    const { tagged_products, ...eventUpdateData } = updateEventDto;
+    
     const { data: event, error } = await client
       .from('events')
-      .update(updateEventDto)
+      .update(eventUpdateData)
       .eq('id', id)
       .select(`
         *,
@@ -209,7 +273,66 @@ export class EventsService {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
 
-    return this.transformEventData(event);
+    // Handle tagged products update
+    if (tagged_products !== undefined) {
+      // Delete existing tags
+      const { error: deleteError } = await client
+        .from('event_product_tags')
+        .delete()
+        .eq('event_id', id);
+
+      if (deleteError) {
+        console.error('Supabase error:', deleteError);
+        throw new Error('Failed to delete existing event product tags');
+      }
+
+      // Insert new tags if provided
+      if (tagged_products && tagged_products.length > 0) {
+        const eventProductTags = tagged_products.map(productId => ({
+          event_id: id,
+          product_id: productId,
+        }));
+
+        const { error: insertError } = await client
+          .from('event_product_tags')
+          .insert(eventProductTags);
+
+        if (insertError) {
+          console.error('Supabase error:', insertError);
+          throw new Error('Failed to create event product tags');
+        }
+      }
+    }
+
+    // Fetch the complete updated event with all relations
+    const { data: completeEvent, error: fetchError } = await client
+      .from('events')
+      .select(`
+        *,
+        companies:company_id (name),
+        customers:customer_id (contact_name, phone, email),
+        profiles:user_id (fullname),
+        sub_types:sub_type_id (name),
+        main_types:main_type_id (name),
+        event_images!event_images_event_id_fkey (url),
+        event_checkins!event_checkins_event_id_fkey (detail, created_at),
+        event_product_tags!event_product_tags_event_id_fkey (
+          product_id,
+          products:product_id (
+            id,
+            name
+          )
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Supabase error:', fetchError);
+      throw new Error('Failed to fetch updated event');
+    }
+
+    return this.transformEventData(completeEvent);
   }
 
   async remove(userId: string, id: string, token: string): Promise<void> {
@@ -341,12 +464,17 @@ export class EventsService {
         detail: checkin.detail,
         created_at: checkin.created_at
       })),
+      taggedProducts: event.event_product_tags?.map((tag: { product_id: string, products: { id: string, name: string } }) => ({
+        id: tag.product_id,
+        name: tag.products.name
+      })),
       companies: undefined,
       profiles: undefined,
       sub_types: undefined,
       event_images: undefined,
       event_checkins: undefined,
       main_types: undefined,
+      event_product_tags: undefined,
     };
   }
 } 
