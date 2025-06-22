@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { PaginationDto } from './pagination.dto';
 
 export class SearchCompanyDto extends PaginationDto {
@@ -21,4 +21,8 @@ export class SearchCompanyDto extends PaginationDto {
   @IsOptional()
   @IsString()
   user_id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tagged_product_id?: string;
 } 

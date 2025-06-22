@@ -56,12 +56,26 @@ export class CompaniesService {
   async findAll(userId: string, searchParams: SearchCompanyDto, token: string): Promise<{ data: Company[], total: number }> {
 
     try {
-      const { page = 1, limit = 10, search, name, province, email, user_id } = searchParams;
+      const { page = 1, limit = 10, search, name, province, email, user_id, tagged_product_id } = searchParams;
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
+
+      // If tagged_product_id is provided, we need to join with event_shoe_variants and events
+      if (tagged_product_id) {
+        return this.findAllWithTaggedProduct(client, {
+          page,
+          limit,
+          search,
+          name,
+          province,
+          email,
+          user_id,
+          tagged_product_id
+        });
+      }
 
       let query = client
         .from('companies')
@@ -111,6 +125,88 @@ export class CompaniesService {
       console.error('Error in findAll:', error);
       throw error;
     }
+  }
+
+  private async findAllWithTaggedProduct(
+    client: any,
+    searchParams: SearchCompanyDto & { tagged_product_id: string }
+  ): Promise<{ data: Company[], total: number }> {
+    const { page = 1, limit = 10, search, name, province, email, user_id, tagged_product_id } = searchParams;
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    // First, get company IDs that have events with the specified product
+    const { data: companyIds, error: companyIdsError } = await client
+      .from('event_product_tags')
+      .select(`
+        events!event_product_tags_event_id_fkey (
+          company_id
+        )
+      `)
+      .eq('product_id', tagged_product_id);
+
+    if (companyIdsError) {
+      console.error('Supabase error:', companyIdsError);
+      throw new Error('Failed to fetch companies with tagged product');
+    }
+
+    if (companyIds.length === 0) {
+      // No companies found with this tagged product, return empty result
+      return {
+        data: [],
+        total: 0
+      };
+    }
+
+    // Extract unique company IDs
+    const uniqueCompanyIds = [...new Set(companyIds.map(item => item.events?.company_id).filter(Boolean))];
+
+    // Build query for companies with the filtered IDs
+    let query = client
+      .from('companies')
+      .select('*', { count: 'exact' })
+      .in('id', uniqueCompanyIds);
+
+    // Apply user_id filter if provided
+    if (user_id) {
+      query = query.eq('user_id', user_id);
+    }
+
+    // Apply search filter if provided
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,id.ilike.%${search}%`);
+    }
+
+    // Apply specific filters
+    if (name) {
+      query = query.ilike('name', `%${name}%`);
+    }
+
+    if (province) {
+      query = query.ilike('province', `%${province}%`);
+    }
+
+    if (email) {
+      query = query.ilike('email', `%${email}%`);
+    }
+
+    // Get total count
+    const { count, data: companies } = await query;
+
+    // Get paginated data
+    const { data, error } = await query
+      .range(start, end)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw new Error('Failed to fetch companies');
+    }
+
+    return {
+      data: data || [],
+      total: count || 0
+    };
   }
 
   async findByUserId(userId: string, pagination: PaginationDto, token: string): Promise<{ data: Company[], total: number }> {
