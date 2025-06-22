@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, UnauthorizedException, HttpCode, HttpStatus, NotFoundException, Put, Delete, Request } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CompaniesService } from './companies.service';
 import { Company } from './entities/company.entity';
 import { AuthGuard } from '../../shared/guards/auth.guard';
@@ -13,6 +14,7 @@ import { TransferCompanyDto } from './dto/transfer-company.dto';
 
 @Controller('companies')
 @UseGuards(AuthGuard)
+@ApiTags('companies')
 export class CompaniesController {
   constructor(
     private readonly companiesService: CompaniesService,
@@ -21,6 +23,8 @@ export class CompaniesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new company' })
+  @ApiResponse({ status: 201, description: 'Company created successfully', type: Company })
   async create(
     @AuthUser() auth: AuthUserData,
     @Body() createCompanyDto: CreateCompanyDto
@@ -40,6 +44,16 @@ export class CompaniesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all companies with optional filtering' })
+  @ApiResponse({ status: 200, description: 'Returns paginated list of companies', type: [Company] })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term for company name or ID' })
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filter by company name' })
+  @ApiQuery({ name: 'province', required: false, type: String, description: 'Filter by province' })
+  @ApiQuery({ name: 'email', required: false, type: String, description: 'Filter by email' })
+  @ApiQuery({ name: 'user_id', required: false, type: String, description: 'Filter by user ID' })
+  @ApiQuery({ name: 'tagged_product_id', required: false, type: String, description: 'Filter companies that have events with this product ID in event_product_tags' })
   async findAll(
     @AuthUser() auth: AuthUserData,
     @Query() searchParams: SearchCompanyDto
@@ -49,6 +63,8 @@ export class CompaniesController {
 
   @Get('inactive')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get inactive companies' })
+  @ApiResponse({ status: 200, description: 'Returns list of inactive companies' })
   async findInactiveCompanies(
     @AuthUser() auth: AuthUserData,
     @Query() params: InactiveCompaniesDto
@@ -61,6 +77,8 @@ export class CompaniesController {
 
   @Get('inactive/stats')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get inactive companies statistics' })
+  @ApiResponse({ status: 200, description: 'Returns inactive companies statistics' })
   async findInactiveCompaniesStats(
     @AuthUser() auth: AuthUserData,
     @Query() params: InactiveCompaniesDto
@@ -72,6 +90,10 @@ export class CompaniesController {
   }
 
   @Get('user/:userId')
+  @ApiOperation({ summary: 'Get companies by user ID' })
+  @ApiResponse({ status: 200, description: 'Returns paginated list of companies for a specific user', type: [Company] })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page' })
   async findByUserId(
     @AuthUser() auth: AuthUserData,
     @Param('userId') userId: string,
@@ -85,6 +107,9 @@ export class CompaniesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get company by ID' })
+  @ApiResponse({ status: 200, description: 'Returns a specific company', type: Company })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async findOne(
     @AuthUser() auth: AuthUserData,
     @Param('id') id: string
@@ -94,6 +119,9 @@ export class CompaniesController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update company by ID' })
+  @ApiResponse({ status: 200, description: 'Company updated successfully', type: Company })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async update(
     @AuthUser() auth: AuthUserData,
     @Param('id') id: string,
@@ -104,6 +132,9 @@ export class CompaniesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete company by ID' })
+  @ApiResponse({ status: 204, description: 'Company deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async delete(
     @AuthUser() auth: AuthUserData,
     @Param('id') id: string
@@ -113,6 +144,9 @@ export class CompaniesController {
 
   @Put(':id/transfer')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Transfer company to another user' })
+  @ApiResponse({ status: 200, description: 'Company transferred successfully', type: Company })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async transfer(
     @AuthUser() auth: AuthUserData,
     @Param('id') id: string,
