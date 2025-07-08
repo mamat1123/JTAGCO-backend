@@ -13,6 +13,8 @@ import { EventSubTypesModule } from './modules/event-sub-types/event-sub-types.m
 import { BusinessTypesModule } from './modules/business-types/business-types.module';
 import { EventCheckinsModule } from './modules/event-checkins/event-checkins.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ShoeRequestsModule } from './modules/shoe-requests/shoe-requests.module';
+import { ShoeReturnsModule } from './modules/shoe-returns/shoe-returns.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     BusinessTypesModule,
     EventCheckinsModule,
     DashboardModule,
+    ShoeRequestsModule,
+    ShoeReturnsModule,
   ],
 })
 export class AppModule { }
