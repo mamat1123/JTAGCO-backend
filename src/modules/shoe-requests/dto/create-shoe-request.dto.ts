@@ -22,4 +22,9 @@ export class CreateShoeRequestDto {
   @Type(() => Date)
   @IsDate()
   return_date?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  pickup_date?: Date;
 } 

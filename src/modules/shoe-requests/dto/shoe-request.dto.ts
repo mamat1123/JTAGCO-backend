@@ -1,10 +1,10 @@
-import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsDate, IsEnum, IsInt, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 
 export enum ShoeRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  RETURNED = 'returned',
 }
 
 export class ShoeRequestDto {
@@ -51,34 +51,20 @@ export class ShoeRequestDto {
 
   @IsOptional()
   @IsDate()
-  due_date?: Date;
+  return_date?: Date;
+
+  @IsOptional()
+  @IsDate()
+  pickup_date?: Date;
 
   // Additional transformed fields
   eventDescription?: string;
-  productVariant?: any;
+  scheduledAt?: Date;
+  mainTypeName?: string;
+  subTypeName?: string;
+  productType?: string;
+  productName?: string;
+  attributes?: any;
   requesterName?: string;
   approverName?: string;
-}
-
-export class CreateShoeRequestDto {
-  @IsUUID()
-  @IsNotEmpty()
-  event_id: string;
-
-  @IsUUID()
-  @IsNotEmpty()
-  shoe_variant_id: string;
-
-  @IsInt()
-  @IsPositive()
-  quantity: number;
-
-  @IsOptional()
-  @IsString()
-  note?: string;
-
-  @IsOptional()
-  @Type(() => Date)
-  @IsDate()
-  due_date?: Date;
 } 

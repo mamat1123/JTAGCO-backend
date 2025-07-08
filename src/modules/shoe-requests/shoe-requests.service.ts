@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { CreateShoeRequestDto } from './dto/create-shoe-request.dto';
-import { ShoeRequestDto } from './dto/shoe-request.dto';
-import { ShoeRequestStatus } from './dto/shoe-request.dto';
+import { ShoeRequestDto, ShoeRequestStatus } from './dto/shoe-request.dto';
 import { FindAllShoeRequestDto } from './dto/find-all-shoe-request.dto';
 
 @Injectable()
@@ -36,7 +35,7 @@ export class ShoeRequestsService {
     token: string,
     eventId?: string,
     query?: FindAllShoeRequestDto,
-  ): Promise<{ data: ShoeRequestDto[], total: number }> {
+  ): Promise<{ data: any[]; total: number }> {
     const client = await this.supabaseService.getUserClient(token);
     const { page = 1, limit = 10 } = query || {};
     const start = (page - 1) * limit;
@@ -49,8 +48,11 @@ export class ShoeRequestsService {
         quantity,
         status,
         return_date,
+        pickup_date,
         reason,
         created_at,
+        event_id,
+        variant_id,
         events:event_id (
           description,
           scheduled_at,
@@ -73,6 +75,16 @@ export class ShoeRequestsService {
         ),
         approvers:approved_by (
           fullname
+        ),
+        shoe_returns:shoe_returns_shoe_request_id_fkey (
+          id,
+          quantity,
+          returned_at,
+          reason,
+          returned_by,
+          returners:returned_by (
+            fullname
+          )
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
@@ -85,15 +97,17 @@ export class ShoeRequestsService {
       if (query.status) {
         queryBuilder = queryBuilder.eq('status', query.status);
       }
-
       if (query.searchTerm) {
-        queryBuilder = queryBuilder.or(`events.description.ilike.%${query.searchTerm}%,product_variants.products.name.ilike.%${query.searchTerm}%,requesters.fullname.ilike.%${query.searchTerm}%`);
+        const safeTerm = query.searchTerm.replace(/[%_]/g, '\\$&'); // prevent wildcard injection
+        queryBuilder = queryBuilder.or(`
+          events.description.ilike.%${safeTerm}%,
+          product_variants.products.name.ilike.%${safeTerm}%,
+          requesters.fullname.ilike.%${safeTerm}%
+        `);
       }
-
       if (query.productName) {
         queryBuilder = queryBuilder.ilike('product_variants.products.name', `%${query.productName}%`);
       }
-
       if (query.requesterName) {
         queryBuilder = queryBuilder.ilike('requesters.fullname', `%${query.requesterName}%`);
       }
@@ -106,11 +120,94 @@ export class ShoeRequestsService {
       throw new Error('Failed to fetch shoe requests');
     }
 
+    // === Batch fetch event_shoe_variants ===
+    const uniqueKeys = Array.from(
+      new Set(shoeRequests.map(r => `${r.event_id}__${r.variant_id}`))
+    ).map(key => {
+      const [event_id, shoe_variant_id] = key.split('__');
+      return { event_id, shoe_variant_id };
+    });
+
+    let eventShoeVariants: any[] = [];
+    console.log("uniqueKeys", uniqueKeys)
+    if (uniqueKeys.length > 0) {
+      const { data, error: variantError } = await client
+        .from('event_shoe_variants')
+        .select('id, event_id, shoe_variant_id')
+        .in('event_id', uniqueKeys.map(k => k.event_id))
+        .in('shoe_variant_id', uniqueKeys.map(k => k.shoe_variant_id));
+
+      if (variantError) {
+        console.error('Supabase error:', variantError);
+        throw new Error('Failed to fetch event_shoe_variants');
+      }
+      eventShoeVariants = data || [];
+    }
+
+    console.log("eventShoeVariants", eventShoeVariants)
+
+    const eventShoeVariantMap: Record<string, string> = {};
+    for (const ev of eventShoeVariants) {
+      const key = `${ev.event_id}__${ev.shoe_variant_id}`;
+      eventShoeVariantMap[key] = ev.id;
+    }
+
+    // === Grouping by event_id ===
+    const groupedData = Object.values(
+      shoeRequests.reduce((acc, curr) => {
+        const eventId = curr.event_id;
+        const key = `${curr.event_id}__${curr.variant_id}`;
+
+        if (!acc[eventId]) {
+          acc[eventId] = {
+            event_id: eventId,
+            event: curr.events,
+            products: [],
+            created_at: curr.created_at,
+          };
+        }
+
+        const returnedQuantity = curr.shoe_returns?.reduce((sum, ret) => sum + ret.quantity, 0) || 0;
+        const isFullyReturned = returnedQuantity >= curr.quantity;
+
+        // Transform shoe_returns to include returner names
+        const transformedReturns = curr.shoe_returns?.map(ret => ({
+          ...ret,
+          returner_name: (ret.returners as any)?.fullname || 'Unknown',
+          returners: undefined, // Remove the nested object
+        })) || [];
+
+        acc[eventId].products.push({
+          id: curr.id,
+          event_shoe_variant_id: eventShoeVariantMap[key] || null,
+          quantity: curr.quantity,
+          status: isFullyReturned ? ShoeRequestStatus.RETURNED : curr.status,
+          return_date: curr.return_date,
+          pickup_date: curr.pickup_date,
+          reason: curr.reason,
+          product_variant: curr.product_variants,
+          requester: curr.requesters,
+          approver: curr.approvers,
+          returned_quantity: returnedQuantity,
+          is_fully_returned: isFullyReturned,
+          returns: transformedReturns,
+        });
+
+        return acc;
+      }, {})
+    );
+
     return {
-      data: shoeRequests.map(request => this.transformShoeRequestData(request)),
-      total: count || 0
+      data: groupedData,
+      total: count || 0,
     };
   }
+
+
+
+
+
+
 
   async findOne(id: string, token: string): Promise<ShoeRequestDto> {
     const client = await this.supabaseService.getUserClient(token);
@@ -170,7 +267,6 @@ export class ShoeRequestsService {
     }
 
     if (status === ShoeRequestStatus.APPROVED) {
-
       const { error: insertError } = await client
         .from('event_shoe_variants')
         .insert({
