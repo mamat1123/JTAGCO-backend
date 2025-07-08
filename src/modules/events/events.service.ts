@@ -6,7 +6,7 @@ import { Event } from './entities/event.entity';
 import { QueryEventDto } from './dto/query-event.dto';
 import { formatDateForDatabase } from '../../shared/utils/date.util';
 import { ShoeRequestsService } from '../shoe-requests/shoe-requests.service';
-import { Step, StepStatus } from './dto/event-request-timeline.dto';
+import { Step, StepStatus, ShoeRequestWithProductVariantDto } from './dto/event-request-timeline.dto';
 
 @Injectable()
 export class EventsService {
@@ -47,6 +47,7 @@ export class EventsService {
         variant_id: product.variant_id,
         quantity: product.quantity,
         return_date: product.return_date || undefined,
+        pickup_date: product.pickup_date || undefined,
       }));
 
       await this.shoeRequestsService.createMany(userId, shoeRequests, token);
@@ -357,19 +358,32 @@ export class EventsService {
   async getEventRequestTimeline(eventId: string, token: string): Promise<Step[]> {
     const client = await this.supabaseService.getUserClient(token);
 
-    // Get shoe requests
+    // Get shoe requests with product variant information
     const { data: shoeRequests, error: shoeRequestsError } = await client
       .from('shoe_requests')
-      .select('*')
+      .select(`
+        *,
+        product_variants:variant_id (
+          id,
+          sku,
+          attributes,
+          price,
+          stock,
+          products:product_id (
+            id,
+            name
+          )
+        )
+      `)
       .eq('event_id', eventId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true }) as { data: ShoeRequestWithProductVariantDto[] | null; error: any };
 
     if (shoeRequestsError) {
       console.error('Supabase error:', shoeRequestsError);
       throw new Error('Failed to fetch shoe requests');
     }
 
-    if (shoeRequests.length === 0) {
+    if (!shoeRequests || shoeRequests.length === 0) {
       return []
     }
 
@@ -398,7 +412,7 @@ export class EventsService {
     }
 
     const firstRequest = shoeRequests[0];
-    const allApproved = shoeRequests.every(r => r.status === 'approved');
+    const allApproved = shoeRequests.every(r => r.status !== 'pending');
     const anyApproved = shoeRequests.some(r => r.status === 'approved');
     const received = variants.some(v => v.status === 'received');
     const latestReturn = returns.sort((a, b) =>
@@ -410,7 +424,7 @@ export class EventsService {
         id: 1,
         title: 'เริ่มต้น',
         description: 'ขอเบิกสินค้า',
-        date: firstRequest.created_at,
+        date: firstRequest.created_at?.toString() || '',
         status: StepStatus.COMPLETED,
       },
       {
@@ -420,22 +434,23 @@ export class EventsService {
         date: allApproved
           ? shoeRequests
             .filter(r => r.status === 'approved')
-            .sort((a, b) => new Date(b.approved_at).getTime() - new Date(a.approved_at).getTime())[0]?.approved_at
+            .sort((a, b) => new Date(b.approved_at || 0).getTime() - new Date(a.approved_at || 0).getTime())[0]?.approved_at?.toString() || ''
           : '',
         status: allApproved ? StepStatus.COMPLETED : StepStatus.PENDING,
+        data: shoeRequests
       },
       {
         id: 3,
         title: 'ได้รับสินค้า',
         description: 'ได้รับสินค้าจากผู้จัดการ',
-        date: received ? variants.find(v => v.status === 'received')?.updated_at : '',
-        status: received ? StepStatus.COMPLETED : (anyApproved ? StepStatus.CURRENT : StepStatus.PENDING),
+        date: received ? variants.find(v => v.status === 'received')?.updated_at?.toString() || '' : '',
+        status: received ? StepStatus.COMPLETED : (allApproved ? StepStatus.CURRENT : StepStatus.PENDING),
       },
       {
         id: 4,
         title: 'ส่งคืนสินค้า',
         description: 'ส่งคืนสินค้าให้กับผู้จัดการ',
-        date: latestReturn ? latestReturn.returned_at : '',
+        date: latestReturn ? latestReturn.returned_at?.toString() || '' : '',
         status: latestReturn ? StepStatus.COMPLETED : (received ? StepStatus.CURRENT : StepStatus.PENDING),
       },
     ];
