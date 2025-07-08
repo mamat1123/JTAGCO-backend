@@ -129,7 +129,6 @@ export class ShoeRequestsService {
     });
 
     let eventShoeVariants: any[] = [];
-    console.log("uniqueKeys", uniqueKeys)
     if (uniqueKeys.length > 0) {
       const { data, error: variantError } = await client
         .from('event_shoe_variants')
@@ -143,8 +142,6 @@ export class ShoeRequestsService {
       }
       eventShoeVariants = data || [];
     }
-
-    console.log("eventShoeVariants", eventShoeVariants)
 
     const eventShoeVariantMap: Record<string, string> = {};
     for (const ev of eventShoeVariants) {
