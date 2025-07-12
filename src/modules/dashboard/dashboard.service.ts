@@ -11,8 +11,8 @@ export class DashboardService {
    */
   async getSalesMetrics(token: string): Promise<DashboardMetricsDto> {
     const currentDate = new Date();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-    const firstDayOfLastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 2, 1);
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const firstDayOfLastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
 
     const [
       currentMonthMetrics,
