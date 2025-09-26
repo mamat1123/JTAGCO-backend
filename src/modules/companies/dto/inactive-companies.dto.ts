@@ -26,5 +26,9 @@ export class InactiveCompaniesDto {
 
   @IsOptional()
   @IsString()
+  user_id?: string;
+
+  @IsOptional()
+  @IsString()
   sortOrder?: 'asc' | 'desc';
 } 

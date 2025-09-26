@@ -362,9 +362,17 @@ export class CompaniesService {
 
   async findInactiveCompaniesStats(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompanyStats }> {
     try {
-      const { months = 3 } = params;
+      const { months = 3, user_id } = params;
       const client = await this.supabaseService.getUserClient(token);
-      const { data, error } = await client.rpc('get_inactive_companies_summary', { months_back: months });
+      
+      const rpcParams: any = { months_back: months };
+      
+      // Add user_id filter if provided
+      if (user_id) {
+        rpcParams.p_user_id = user_id;
+      }
+      
+      const { data, error } = await client.rpc('get_inactive_companies_summary', rpcParams);
       if (error) {
         console.error('Supabase error:', error);
         throw new Error('Failed to fetch inactive companies stats');
@@ -379,23 +387,29 @@ export class CompaniesService {
 
   async findInactiveCompanies(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompany[] }> {
     try {
-      const { page = 1, limit = 10, months = 3, sortBy = 'last_event_updated_at', sortOrder = 'desc' } = params;
+      const { page = 1, limit = 10, months = 3, sortBy = 'last_event_updated_at', sortOrder = 'desc', user_id } = params;
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
 
-
       // Call the RPC function to get inactive companies
+      const rpcParams: any = {
+        months_back: months,
+        start_row: start,
+        end_row: end,
+        sort_by: sortBy ?? 'last_event_updated_at',
+        sort_order: sortOrder ?? 'desc'
+      };
+
+      // Add user_id filter if provided
+      if (user_id) {
+        rpcParams.p_user_id = user_id;
+      }
+
       const { data, error } = await client
-        .rpc('get_inactive_companies', {
-          months_back: months,
-          start_row: start,
-          end_row: end,
-          sort_by: sortBy ?? 'last_event_updated_at',
-          sort_order: sortOrder ?? 'desc'
-        });
+        .rpc('get_inactive_companies', rpcParams);
 
       if (error) {
         console.error('Supabase error:', error);
