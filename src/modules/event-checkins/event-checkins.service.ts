@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { EventCheckinDto } from './dto/event-checkin.dto';
 import { CreateEventCheckinDto } from './dto/create-event-checkin.dto';
@@ -6,6 +6,18 @@ import { CreateEventCheckinDto } from './dto/create-event-checkin.dto';
 @Injectable()
 export class EventCheckinsService {
   constructor(private readonly supabaseService: SupabaseService) {}
+
+  private isVisitEventType(mainTypeName: string): boolean {
+    return mainTypeName.includes('เข้าพบ');
+  }
+
+  private isSameDayAsToday(date: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate.getTime() === today.getTime();
+  }
 
   /**
    * Retrieves all check-ins for a specific event
@@ -29,6 +41,13 @@ export class EventCheckinsService {
       eventId: checkin.event_id,
       checkin_at: checkin.checkin_at,
       detail: checkin.detail,
+      images: checkin.images || [],
+      product_selections: checkin.product_selections || [],
+      delivery_duration: checkin.delivery_duration,
+      purchase_type: checkin.purchase_type,
+      purchase_months: checkin.purchase_months || [],
+      competitor_brand: checkin.competitor_brand,
+      special_requirements: checkin.special_requirements,
       created_at: checkin.created_at,
     }));
   }
@@ -43,6 +62,35 @@ export class EventCheckinsService {
   async create(eventId: string, createEventCheckinDto: CreateEventCheckinDto, token: string): Promise<EventCheckinDto> {
     const client = await this.supabaseService.getUserClient(token);
 
+    // Get event details to check if it's a visit event and validate date
+    const { data: event, error: getEventError } = await client
+      .from('events')
+      .select('scheduled_at, main_type_id, status')
+      .eq('id', eventId)
+      .single();
+
+    if (getEventError) {
+      throw new Error(`Failed to get event: ${getEventError.message}`);
+    }
+
+    // Get main type name
+    const { data: mainType, error: mainTypeError } = await client
+      .from('event_main_types')
+      .select('name')
+      .eq('id', event.main_type_id)
+      .single();
+
+    if (mainTypeError) {
+      throw new Error(`Failed to get event main type: ${mainTypeError.message}`);
+    }
+
+    // Validate check-in for visit events - must be on the same day as scheduled
+    if (this.isVisitEventType(mainType.name)) {
+      if (!this.isSameDayAsToday(event.scheduled_at)) {
+        throw new BadRequestException('กิจกรรมนี้ผ่านวันไปแล้วไม่สามารถ checkin ได้');
+      }
+    }
+
     // Start a transaction
     const { data: checkin, error: checkinError } = await client
       .from('event_checkins')
@@ -50,6 +98,13 @@ export class EventCheckinsService {
         event_id: eventId,
         detail: createEventCheckinDto.detail,
         checkin_at: new Date().toISOString(),
+        images: createEventCheckinDto.images || [],
+        product_selections: createEventCheckinDto.product_selections || [],
+        delivery_duration: createEventCheckinDto.delivery_duration,
+        purchase_type: createEventCheckinDto.purchase_type,
+        purchase_months: createEventCheckinDto.purchase_months || [],
+        competitor_brand: createEventCheckinDto.competitor_brand,
+        special_requirements: createEventCheckinDto.special_requirements,
       })
       .select()
       .single();
@@ -75,17 +130,6 @@ export class EventCheckinsService {
       }
     }
 
-    // Check current event status before updating
-    const { data: event, error: getEventError } = await client
-      .from('events')
-      .select('status')
-      .eq('id', eventId)
-      .single();
-
-    if (getEventError) {
-      throw new Error(`Failed to get event status: ${getEventError.message}`);
-    }
-
     // Only update if not already completed
     if (event.status !== 'completed') {
       const { error: eventError } = await client
@@ -103,6 +147,13 @@ export class EventCheckinsService {
       eventId: checkin.event_id,
       checkin_at: checkin.checkin_at,
       detail: checkin.detail,
+      images: checkin.images || [],
+      product_selections: checkin.product_selections || [],
+      delivery_duration: checkin.delivery_duration,
+      purchase_type: checkin.purchase_type,
+      purchase_months: checkin.purchase_months || [],
+      competitor_brand: checkin.competitor_brand,
+      special_requirements: checkin.special_requirements,
       created_at: checkin.created_at,
     };
   }
