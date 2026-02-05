@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -6,17 +10,58 @@ import { Event } from './entities/event.entity';
 import { QueryEventDto } from './dto/query-event.dto';
 import { formatDateForDatabase } from '../../shared/utils/date.util';
 import { ShoeRequestsService } from '../shoe-requests/shoe-requests.service';
-import { Step, StepStatus, ShoeRequestWithProductVariantDto } from './dto/event-request-timeline.dto';
+import {
+  Step,
+  StepStatus,
+  ShoeRequestWithProductVariantDto,
+} from './dto/event-request-timeline.dto';
 
 @Injectable()
 export class EventsService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly shoeRequestsService: ShoeRequestsService,
-  ) { }
+  ) {}
 
-  async create(userId: string, createEventDto: CreateEventDto, token: string): Promise<Event> {
+  private isVisitEventType(mainTypeName: string): boolean {
+    return mainTypeName.includes('เข้าพบ');
+  }
+
+  private isValidVisitDate(scheduledAt: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const scheduledDate = new Date(scheduledAt);
+    scheduledDate.setHours(0, 0, 0, 0);
+    return scheduledDate >= today;
+  }
+
+  async create(
+    userId: string,
+    createEventDto: CreateEventDto,
+    token: string,
+  ): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
+
+    // Get main type name to check if it's a visit event
+    const { data: mainType, error: mainTypeError } = await client
+      .from('event_main_types')
+      .select('name')
+      .eq('id', createEventDto.main_type_id)
+      .single();
+
+    if (mainTypeError) {
+      console.error('Supabase error:', mainTypeError);
+      throw new Error('Failed to fetch event main type');
+    }
+
+    // Validate date for visit events
+    if (this.isVisitEventType(mainType.name)) {
+      if (!this.isValidVisitDate(createEventDto.scheduled_at)) {
+        throw new BadRequestException(
+          'กิจกรรมเข้าพบต้องสร้างล่วงหน้าหรือวันนี้เท่านั้น',
+        );
+      }
+    }
 
     // Start a transaction
     const { data: event, error: eventError } = await client
@@ -24,13 +69,28 @@ export class EventsService {
       .insert({
         description: createEventDto.description,
         scheduled_at: formatDateForDatabase(createEventDto.scheduled_at),
-        test_start_at: createEventDto.test_start_at ? formatDateForDatabase(createEventDto.test_start_at) : null,
-        test_end_at: createEventDto.test_end_at ? formatDateForDatabase(createEventDto.test_end_at) : null,
+        test_start_at: createEventDto.test_start_at
+          ? formatDateForDatabase(createEventDto.test_start_at)
+          : null,
+        test_end_at: createEventDto.test_end_at
+          ? formatDateForDatabase(createEventDto.test_end_at)
+          : null,
         main_type_id: createEventDto.main_type_id,
         sub_type_id: createEventDto.sub_type_id || null,
         company_id: createEventDto.company_id,
-        customer_id: createEventDto.customer_id,
+        customer_id: createEventDto.customer_id || null,
         user_id: userId,
+        sales_before_vat: createEventDto.sales_before_vat || null,
+        business_type: createEventDto.business_type || null,
+        shoe_order_quantity: createEventDto.shoe_order_quantity || null,
+        has_appointment: createEventDto.has_appointment ?? null,
+        purchase_months: createEventDto.purchase_months || null,
+        test_result: createEventDto.test_result || null,
+        test_result_reason: createEventDto.test_result_reason || null,
+        got_job: createEventDto.got_job || null,
+        got_job_reason: createEventDto.got_job_reason || null,
+        problem_type: createEventDto.problem_type || null,
+        present_time: createEventDto.present_time || null,
       })
       .select()
       .single();
@@ -42,7 +102,7 @@ export class EventsService {
 
     // Insert event shoe variants if products exist
     if (createEventDto.products && createEventDto.products.length > 0) {
-      const shoeRequests = createEventDto.products.map(product => ({
+      const shoeRequests = createEventDto.products.map((product) => ({
         event_id: event.id,
         variant_id: product.variant_id,
         quantity: product.quantity,
@@ -55,7 +115,7 @@ export class EventsService {
 
     // Insert event images if image_urls exist
     if (createEventDto.image_urls && createEventDto.image_urls.length > 0) {
-      const eventImages = createEventDto.image_urls.map(url => ({
+      const eventImages = createEventDto.image_urls.map((url) => ({
         event_id: event.id,
         url,
         type: 'plan',
@@ -72,12 +132,17 @@ export class EventsService {
     }
 
     // Insert event product tags if tagged_products exist
-    if (createEventDto.tagged_products && createEventDto.tagged_products.length > 0) {
-      const eventProductTags = createEventDto.tagged_products.map(taggedProduct => ({
-        event_id: event.id,
-        product_id: taggedProduct.product_id,
-        price: taggedProduct.price,
-      }));
+    if (
+      createEventDto.tagged_products &&
+      createEventDto.tagged_products.length > 0
+    ) {
+      const eventProductTags = createEventDto.tagged_products.map(
+        (taggedProduct) => ({
+          event_id: event.id,
+          product_id: taggedProduct.product_id,
+          price: taggedProduct.price,
+        }),
+      );
 
       const { error: tagsError } = await client
         .from('event_product_tags')
@@ -92,7 +157,8 @@ export class EventsService {
     // Fetch the complete event with all relations
     const { data: completeEvent, error: fetchError } = await client
       .from('events')
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (name),
         profiles:user_id (fullname),
@@ -119,7 +185,8 @@ export class EventsService {
             name
           )
         )
-      `)
+      `,
+      )
       .eq('id', event.id)
       .single();
 
@@ -135,7 +202,8 @@ export class EventsService {
     const client = await this.supabaseService.getUserClient(token);
     let queryBuilder = client
       .from('events')
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (name),
         profiles:user_id (fullname),
@@ -149,7 +217,8 @@ export class EventsService {
             name
           )
         )
-      `)
+      `,
+      )
       .order('created_at', { ascending: false });
 
     // Apply filters
@@ -162,11 +231,17 @@ export class EventsService {
     }
 
     if (query.scheduled_at_start) {
-      queryBuilder = queryBuilder.gte('scheduled_at', query.scheduled_at_start.toISOString().split('T')[0]);
+      queryBuilder = queryBuilder.gte(
+        'scheduled_at',
+        query.scheduled_at_start.toISOString().split('T')[0],
+      );
     }
 
     if (query.scheduled_at_end) {
-      queryBuilder = queryBuilder.lte('scheduled_at', query.scheduled_at_end.toISOString().split('T')[0]);
+      queryBuilder = queryBuilder.lte(
+        'scheduled_at',
+        query.scheduled_at_end.toISOString().split('T')[0],
+      );
     }
 
     if (query.main_type_id) {
@@ -199,7 +274,7 @@ export class EventsService {
         return [];
       }
 
-      const eventIdList = eventIds.map(item => item.event_id);
+      const eventIdList = eventIds.map((item) => item.event_id);
       queryBuilder = queryBuilder.in('id', eventIdList);
     }
 
@@ -213,21 +288,23 @@ export class EventsService {
 
     if (query.search) {
       const keyword = query.search.toLowerCase();
-      filtered = events.filter(e =>
-        e.company_id?.toString().includes(keyword) ||
-        e.description?.toLowerCase().includes(keyword) ||
-        e.companies?.name?.toLowerCase().includes(keyword)
+      filtered = events.filter(
+        (e) =>
+          e.company_id?.toString().includes(keyword) ||
+          e.description?.toLowerCase().includes(keyword) ||
+          e.companies?.name?.toLowerCase().includes(keyword),
       );
     }
 
-    return filtered.map(event => this.transformEventData(event));
+    return filtered.map((event) => this.transformEventData(event));
   }
 
   async findOne(userId: string, id: string, token: string): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: event, error } = await client
       .from('events')
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (name),
         customers:customer_id (contact_name, phone, email),
@@ -244,7 +321,8 @@ export class EventsService {
             name
           )
         )
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -256,21 +334,61 @@ export class EventsService {
     return this.transformEventData(event);
   }
 
-  async update(userId: string, id: string, updateEventDto: UpdateEventDto, token: string): Promise<Event> {
+  async update(
+    userId: string,
+    id: string,
+    updateEventDto: UpdateEventDto,
+    token: string,
+  ): Promise<Event> {
     const client = await this.supabaseService.getUserClient(token);
-    
+
     // Extract tagged_products from updateEventDto to handle separately
     const { tagged_products, ...eventUpdateData } = updateEventDto;
-    
+
+    // Get current event to check main type
+    const { data: currentEvent, error: currentEventError } = await client
+      .from('events')
+      .select('main_type_id')
+      .eq('id', id)
+      .single();
+
+    if (currentEventError) {
+      console.error('Supabase error:', currentEventError);
+      throw new NotFoundException(`Event with ID ${id} not found`);
+    }
+
+    // Get main type name to check if it's a visit event
+    const { data: mainType, error: mainTypeError } = await client
+      .from('event_main_types')
+      .select('name')
+      .eq('id', currentEvent.main_type_id)
+      .single();
+
+    if (mainTypeError) {
+      console.error('Supabase error:', mainTypeError);
+      throw new Error('Failed to fetch event main type');
+    }
+
+    // Validate date for visit events if scheduled_at is being updated
+    if (eventUpdateData.scheduled_at && this.isVisitEventType(mainType.name)) {
+      if (!this.isValidVisitDate(eventUpdateData.scheduled_at)) {
+        throw new BadRequestException(
+          'กิจกรรมเข้าพบต้องสร้างล่วงหน้าหรือวันนี้เท่านั้น',
+        );
+      }
+    }
+
     const { data: event, error } = await client
       .from('events')
       .update(eventUpdateData)
       .eq('id', id)
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (name),
         profiles:id (fullname)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
@@ -293,7 +411,7 @@ export class EventsService {
 
       // Insert new tags if provided
       if (tagged_products && tagged_products.length > 0) {
-        const eventProductTags = tagged_products.map(taggedProduct => ({
+        const eventProductTags = tagged_products.map((taggedProduct) => ({
           event_id: id,
           product_id: taggedProduct.product_id,
           price: taggedProduct.price,
@@ -313,7 +431,8 @@ export class EventsService {
     // Fetch the complete updated event with all relations
     const { data: completeEvent, error: fetchError } = await client
       .from('events')
-      .select(`
+      .select(
+        `
         *,
         companies:company_id (name),
         customers:customer_id (contact_name, phone, email),
@@ -330,7 +449,8 @@ export class EventsService {
             name
           )
         )
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -344,10 +464,7 @@ export class EventsService {
 
   async remove(userId: string, id: string, token: string): Promise<void> {
     const client = await this.supabaseService.getUserClient(token);
-    const { error } = await client
-      .from('events')
-      .delete()
-      .eq('id', id);
+    const { error } = await client.from('events').delete().eq('id', id);
 
     if (error) {
       console.error('Supabase error:', error);
@@ -355,13 +472,17 @@ export class EventsService {
     }
   }
 
-  async getEventRequestTimeline(eventId: string, token: string): Promise<Step[]> {
+  async getEventRequestTimeline(
+    eventId: string,
+    token: string,
+  ): Promise<Step[]> {
     const client = await this.supabaseService.getUserClient(token);
 
     // Get shoe requests with product variant information
-    const { data: shoeRequests, error: shoeRequestsError } = await client
+    const { data: shoeRequests, error: shoeRequestsError } = (await client
       .from('shoe_requests')
-      .select(`
+      .select(
+        `
         *,
         product_variants:variant_id (
           id,
@@ -374,9 +495,13 @@ export class EventsService {
             name
           )
         )
-      `)
+      `,
+      )
       .eq('event_id', eventId)
-      .order('created_at', { ascending: true }) as { data: ShoeRequestWithProductVariantDto[] | null; error: any };
+      .order('created_at', { ascending: true })) as {
+      data: ShoeRequestWithProductVariantDto[] | null;
+      error: any;
+    };
 
     if (shoeRequestsError) {
       console.error('Supabase error:', shoeRequestsError);
@@ -384,7 +509,7 @@ export class EventsService {
     }
 
     if (!shoeRequests || shoeRequests.length === 0) {
-      return []
+      return [];
     }
 
     // Get event shoe variants
@@ -398,7 +523,7 @@ export class EventsService {
       throw new Error('Failed to fetch event shoe variants');
     }
 
-    const variantIds = variants.map(v => v.id);
+    const variantIds = variants.map((v) => v.id);
 
     // Get shoe returns
     const { data: returns, error: returnsError } = await client
@@ -412,11 +537,12 @@ export class EventsService {
     }
 
     const firstRequest = shoeRequests[0];
-    const allApproved = shoeRequests.every(r => r.status !== 'pending');
-    const anyApproved = shoeRequests.some(r => r.status === 'approved');
-    const received = variants.some(v => v.status === 'received');
-    const latestReturn = returns.sort((a, b) =>
-      new Date(b.returned_at).getTime() - new Date(a.returned_at).getTime()
+    const allApproved = shoeRequests.every((r) => r.status !== 'pending');
+    const anyApproved = shoeRequests.some((r) => r.status === 'approved');
+    const received = variants.some((v) => v.status === 'received');
+    const latestReturn = returns.sort(
+      (a, b) =>
+        new Date(b.returned_at).getTime() - new Date(a.returned_at).getTime(),
     )[0];
 
     const steps: Step[] = [
@@ -433,32 +559,52 @@ export class EventsService {
         description: 'สินค้าได้รับการอนุมัติจากผู้จัดการ',
         date: allApproved
           ? shoeRequests
-            .filter(r => r.status === 'approved')
-            .sort((a, b) => new Date(b.approved_at || 0).getTime() - new Date(a.approved_at || 0).getTime())[0]?.approved_at?.toString() || ''
+              .filter((r) => r.status === 'approved')
+              .sort(
+                (a, b) =>
+                  new Date(b.approved_at || 0).getTime() -
+                  new Date(a.approved_at || 0).getTime(),
+              )[0]
+              ?.approved_at?.toString() || ''
           : '',
         status: allApproved ? StepStatus.COMPLETED : StepStatus.PENDING,
-        data: shoeRequests
+        data: shoeRequests,
       },
       {
         id: 3,
         title: 'ได้รับสินค้า',
         description: 'ได้รับสินค้าจากผู้จัดการ',
-        date: received ? variants.find(v => v.status === 'received')?.updated_at?.toString() || '' : '',
-        status: received ? StepStatus.COMPLETED : (allApproved ? StepStatus.CURRENT : StepStatus.PENDING),
+        date: received
+          ? variants
+              .find((v) => v.status === 'received')
+              ?.updated_at?.toString() || ''
+          : '',
+        status: received
+          ? StepStatus.COMPLETED
+          : allApproved
+            ? StepStatus.CURRENT
+            : StepStatus.PENDING,
       },
       {
         id: 4,
         title: 'ส่งคืนสินค้า',
         description: 'ส่งคืนสินค้าให้กับผู้จัดการ',
         date: latestReturn ? latestReturn.returned_at?.toString() || '' : '',
-        status: latestReturn ? StepStatus.COMPLETED : (received ? StepStatus.CURRENT : StepStatus.PENDING),
+        status: latestReturn
+          ? StepStatus.COMPLETED
+          : received
+            ? StepStatus.CURRENT
+            : StepStatus.PENDING,
       },
     ];
 
     return steps;
   }
 
-  async updateEventShoeVariantsToReceive(eventId: string, token: string): Promise<void> {
+  async updateEventShoeVariantsToReceive(
+    eventId: string,
+    token: string,
+  ): Promise<void> {
     const client = await this.supabaseService.getUserClient(token);
 
     // Update all event shoe variants for the given event to 'received' status
@@ -480,16 +626,26 @@ export class EventsService {
       userFullName: event.profiles?.fullname,
       subTypeName: event.sub_types?.name,
       mainTypeName: event.main_types?.name,
-      eventImages: event.event_images?.map((image: { url: string }) => image.url),
-      eventCheckins: event.event_checkins?.map((checkin: { detail: string, created_at: string }) => ({
-        detail: checkin.detail,
-        created_at: checkin.created_at
-      })),
-      taggedProducts: event.event_product_tags?.map((tag: { product_id: string, price: number, products: { id: string, name: string } }) => ({
-        id: tag.product_id,
-        name: tag.products.name,
-        price: tag.price
-      })),
+      eventImages: event.event_images?.map(
+        (image: { url: string }) => image.url,
+      ),
+      eventCheckins: event.event_checkins?.map(
+        (checkin: { detail: string; created_at: string }) => ({
+          detail: checkin.detail,
+          created_at: checkin.created_at,
+        }),
+      ),
+      taggedProducts: event.event_product_tags?.map(
+        (tag: {
+          product_id: string;
+          price: number;
+          products: { id: string; name: string };
+        }) => ({
+          id: tag.product_id,
+          name: tag.products.name,
+          price: tag.price,
+        }),
+      ),
       companies: undefined,
       profiles: undefined,
       sub_types: undefined,
@@ -499,4 +655,4 @@ export class EventsService {
       event_product_tags: undefined,
     };
   }
-} 
+}
