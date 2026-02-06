@@ -23,4 +23,7 @@ export class Product {
 
   @Column({ nullable: true })
   description: string;
+
+  @Column({ type: 'int', nullable: true })
+  priority: number;
 } 

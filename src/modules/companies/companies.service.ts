@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, Inject, forwardRef, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { Company } from './entities/company.entity';
 import { PaginationDto } from './dto/pagination.dto';
@@ -8,7 +14,10 @@ import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { CompanyIdService } from './services/company-id.service';
 import { InactiveCompaniesDto } from './dto/inactive-companies.dto';
-import { InactiveCompany, InactiveCompanyStats } from './entities/inactive-company.entity';
+import {
+  InactiveCompany,
+  InactiveCompanyStats,
+} from './entities/inactive-company.entity';
 
 @Injectable()
 export class CompaniesService {
@@ -16,16 +25,19 @@ export class CompaniesService {
     private readonly supabaseService: SupabaseService,
     private readonly companyIdService: CompanyIdService,
     @Inject(forwardRef(() => CustomerService))
-    private customerService: CustomerService
-  ) { }
+    private customerService: CustomerService,
+  ) {}
 
-  async create(profileId: string, createCompanyDto: CreateCompanyDto, token: string): Promise<Company> {
-
+  async create(
+    profileId: string,
+    createCompanyDto: CreateCompanyDto,
+    token: string,
+  ): Promise<Company> {
     try {
       // Generate company ID using the profile ID
       const companyId = await this.companyIdService.generateCompanyId(
         token,
-        profileId
+        profileId,
       );
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -36,7 +48,7 @@ export class CompaniesService {
         .insert({
           ...createCompanyDto,
           id: companyId,
-          user_id: profileId // Use the profile ID as user_id
+          user_id: profileId, // Use the profile ID as user_id
         })
         .select()
         .single();
@@ -53,10 +65,22 @@ export class CompaniesService {
     }
   }
 
-  async findAll(userId: string, searchParams: SearchCompanyDto, token: string): Promise<{ data: Company[], total: number }> {
-
+  async findAll(
+    userId: string,
+    searchParams: SearchCompanyDto,
+    token: string,
+  ): Promise<{ data: Company[]; total: number }> {
     try {
-      const { page = 1, limit = 10, search, name, province, email, user_id, tagged_product_id } = searchParams;
+      const {
+        page = 1,
+        limit = 10,
+        search,
+        name,
+        province,
+        email,
+        user_id,
+        tagged_product_id,
+      } = searchParams;
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
@@ -73,13 +97,11 @@ export class CompaniesService {
           province,
           email,
           user_id,
-          tagged_product_id
+          tagged_product_id,
         });
       }
 
-      let query = client
-        .from('companies')
-        .select('*', { count: 'exact' });
+      let query = client.from('companies').select('*', { count: 'exact' });
 
       // Apply user_id filter if provided
       if (user_id) {
@@ -104,11 +126,8 @@ export class CompaniesService {
         query = query.ilike('email', `%${email}%`);
       }
 
-      // Get total count
-      const { count, data: companies } = await query;
-
-      // Get paginated data
-      const { data, error } = await query
+      // Get paginated data with count in single query
+      const { data, error, count } = await query
         .range(start, end)
         .order('created_at', { ascending: false });
 
@@ -119,7 +138,7 @@ export class CompaniesService {
 
       return {
         data: data || [],
-        total: count || 0
+        total: count || 0,
       };
     } catch (error) {
       console.error('Error in findAll:', error);
@@ -129,20 +148,31 @@ export class CompaniesService {
 
   private async findAllWithTaggedProduct(
     client: any,
-    searchParams: SearchCompanyDto & { tagged_product_id: string }
-  ): Promise<{ data: Company[], total: number }> {
-    const { page = 1, limit = 10, search, name, province, email, user_id, tagged_product_id } = searchParams;
+    searchParams: SearchCompanyDto & { tagged_product_id: string },
+  ): Promise<{ data: Company[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      name,
+      province,
+      email,
+      user_id,
+      tagged_product_id,
+    } = searchParams;
     const start = (page - 1) * limit;
     const end = start + limit - 1;
 
     // First, get company IDs that have events with the specified product
     const { data: companyIds, error: companyIdsError } = await client
       .from('event_product_tags')
-      .select(`
+      .select(
+        `
         events!event_product_tags_event_id_fkey (
           company_id
         )
-      `)
+      `,
+      )
       .eq('product_id', tagged_product_id);
 
     if (companyIdsError) {
@@ -154,12 +184,16 @@ export class CompaniesService {
       // No companies found with this tagged product, return empty result
       return {
         data: [],
-        total: 0
+        total: 0,
       };
     }
 
     // Extract unique company IDs
-    const uniqueCompanyIds = [...new Set(companyIds.map(item => item.events?.company_id).filter(Boolean))];
+    const uniqueCompanyIds = [
+      ...new Set(
+        companyIds.map((item) => item.events?.company_id).filter(Boolean),
+      ),
+    ];
 
     // Build query for companies with the filtered IDs
     let query = client
@@ -205,12 +239,15 @@ export class CompaniesService {
 
     return {
       data: data || [],
-      total: count || 0
+      total: count || 0,
     };
   }
 
-  async findByUserId(userId: string, pagination: PaginationDto, token: string): Promise<{ data: Company[], total: number }> {
-
+  async findByUserId(
+    userId: string,
+    pagination: PaginationDto,
+    token: string,
+  ): Promise<{ data: Company[]; total: number }> {
     try {
       const { page = 1, limit = 10 } = pagination;
       const start = (page - 1) * limit;
@@ -228,10 +265,12 @@ export class CompaniesService {
       // Get paginated data for this user with customers
       const { data, error } = await client
         .from('companies')
-        .select(`
+        .select(
+          `
           *,
           customers:customer(*)
-        `)
+        `,
+        )
         .eq('user_id', userId)
         .range(start, end)
         .order('created_at', { ascending: false });
@@ -243,7 +282,7 @@ export class CompaniesService {
 
       return {
         data: data || [],
-        total: count || 0
+        total: count || 0,
       };
     } catch (error) {
       console.error('Error in findByUserId:', error);
@@ -252,7 +291,6 @@ export class CompaniesService {
   }
 
   async findOne(id: string, userId: string, token: string): Promise<Company> {
-
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -270,7 +308,9 @@ export class CompaniesService {
       }
 
       if (!company) {
-        throw new UnauthorizedException('You do not have access to this company');
+        throw new UnauthorizedException(
+          'You do not have access to this company',
+        );
       }
 
       // Then, get the customers using CustomerService
@@ -288,8 +328,12 @@ export class CompaniesService {
     }
   }
 
-  async update(id: string, userId: string, updateCompanyDto: UpdateCompanyDto, token: string): Promise<Company> {
-
+  async update(
+    id: string,
+    userId: string,
+    updateCompanyDto: UpdateCompanyDto,
+    token: string,
+  ): Promise<Company> {
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -327,7 +371,6 @@ export class CompaniesService {
   }
 
   async delete(id: string, userId: string, token: string): Promise<void> {
-
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -360,34 +403,50 @@ export class CompaniesService {
     }
   }
 
-  async findInactiveCompaniesStats(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompanyStats }> {
+  async findInactiveCompaniesStats(
+    params: InactiveCompaniesDto,
+    token: string,
+  ): Promise<{ data: InactiveCompanyStats }> {
     try {
       const { months = 3, user_id } = params;
       const client = await this.supabaseService.getUserClient(token);
-      
+
       const rpcParams: any = { months_back: months };
-      
+
       // Add user_id filter if provided
       if (user_id) {
         rpcParams.p_user_id = user_id;
       }
-      
-      const { data, error } = await client.rpc('get_inactive_companies_summary', rpcParams);
+
+      const { data, error } = await client.rpc(
+        'get_inactive_companies_summary',
+        rpcParams,
+      );
       if (error) {
         console.error('Supabase error:', error);
         throw new Error('Failed to fetch inactive companies stats');
       }
 
-      return data[0]
+      return data[0];
     } catch (error) {
       console.error('Error in findInactiveCompaniesStats:', error);
       throw error;
     }
   }
 
-  async findInactiveCompanies(params: InactiveCompaniesDto, token: string): Promise<{ data: InactiveCompany[] }> {
+  async findInactiveCompanies(
+    params: InactiveCompaniesDto,
+    token: string,
+  ): Promise<{ data: InactiveCompany[] }> {
     try {
-      const { page = 1, limit = 10, months = 3, sortBy = 'last_event_updated_at', sortOrder = 'desc', user_id } = params;
+      const {
+        page = 1,
+        limit = 10,
+        months = 3,
+        sortBy = 'last_event_updated_at',
+        sortOrder = 'desc',
+        user_id,
+      } = params;
       const start = (page - 1) * limit;
       const end = start + limit - 1;
 
@@ -400,7 +459,7 @@ export class CompaniesService {
         start_row: start,
         end_row: end,
         sort_by: sortBy ?? 'last_event_updated_at',
-        sort_order: sortOrder ?? 'desc'
+        sort_order: sortOrder ?? 'desc',
       };
 
       // Add user_id filter if provided
@@ -408,22 +467,24 @@ export class CompaniesService {
         rpcParams.p_user_id = user_id;
       }
 
-      const { data, error } = await client
-        .rpc('get_inactive_companies', rpcParams);
+      const { data, error } = await client.rpc(
+        'get_inactive_companies',
+        rpcParams,
+      );
 
       if (error) {
         console.error('Supabase error:', error);
         throw new Error('Failed to fetch inactive companies');
       }
       // Map to InactiveCompany type
-      const cleanedCompanies = data.map(company => ({
+      const cleanedCompanies = data.map((company) => ({
         id: company.company_id,
         name: company.company_name,
         province: company.province,
         branch: company.branch,
         totalEmployees: company.total_employees,
         credit: company.credit,
-        lastEventUpdatedAt: company.last_event_updated_at
+        lastEventUpdatedAt: company.last_event_updated_at,
       }));
 
       return {
@@ -435,7 +496,11 @@ export class CompaniesService {
     }
   }
 
-  async transfer(id: string, newUserId: number, token: string): Promise<Company> {
+  async transfer(
+    id: string,
+    newUserId: number,
+    token: string,
+  ): Promise<Company> {
     try {
       // Get authenticated client for RLS
       const client = await this.supabaseService.getUserClient(token);
@@ -448,7 +513,9 @@ export class CompaniesService {
         .single();
 
       if (companyError || !company) {
-        throw new NotFoundException(`Company with ID ${id} not found or you don't have permission to transfer it`);
+        throw new NotFoundException(
+          `Company with ID ${id} not found or you don't have permission to transfer it`,
+        );
       }
 
       // Update the company's user_id
@@ -470,4 +537,4 @@ export class CompaniesService {
       throw error;
     }
   }
-} 
+}

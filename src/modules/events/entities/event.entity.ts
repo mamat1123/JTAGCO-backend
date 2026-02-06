@@ -80,6 +80,39 @@ export class Event {
   @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
+  @Column({ name: 'sales_before_vat', type: 'int', nullable: true })
+  salesBeforeVat: number;
+
+  @Column({ name: 'business_type', type: 'varchar', length: 255, nullable: true })
+  businessType: string;
+
+  @Column({ name: 'shoe_order_quantity', type: 'int', nullable: true })
+  shoeOrderQuantity: number;
+
+  @Column({ name: 'has_appointment', type: 'boolean', nullable: true })
+  hasAppointment: boolean;
+
+  @Column({ name: 'purchase_months', type: 'text', array: true, nullable: true })
+  purchaseMonths: string[];
+
+  @Column({ name: 'test_result', type: 'varchar', length: 50, nullable: true })
+  testResult: string;
+
+  @Column({ name: 'test_result_reason', type: 'text', nullable: true })
+  testResultReason: string;
+
+  @Column({ name: 'got_job', type: 'varchar', length: 50, nullable: true })
+  gotJob: string;
+
+  @Column({ name: 'got_job_reason', type: 'text', nullable: true })
+  gotJobReason: string;
+
+  @Column({ name: 'problem_type', type: 'varchar', length: 100, nullable: true })
+  problemType: string;
+
+  @Column({ name: 'present_time', type: 'time', nullable: true })
+  presentTime: string;
+
   // Joined fields
   companyName?: string;
   userFullName?: string;

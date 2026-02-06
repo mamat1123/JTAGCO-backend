@@ -31,7 +31,7 @@ export class ProductsService {
     const { data: products, error } = await client
       .from('products')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('priority', { ascending: true });
 
     if (error) {
       console.error('Supabase error:', error);
