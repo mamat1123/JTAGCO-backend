@@ -21,4 +21,4 @@ export class EventSubTypeResponseDto {
   mainTypeId: number;
   code: string;
   name: string;
-} 
+}

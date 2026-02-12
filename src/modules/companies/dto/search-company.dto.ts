@@ -25,4 +25,4 @@ export class SearchCompanyDto extends PaginationDto {
   @IsOptional()
   @IsUUID()
   tagged_product_id?: string;
-} 
+}

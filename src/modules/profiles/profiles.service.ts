@@ -1,13 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { ProfileDto } from './dto/profile.dto';
-import { ApproveProfileDto, ProfileStatus } from './dto/approve-profile.dto';
+import { ApproveProfileDto } from './dto/approve-profile.dto';
 
 @Injectable()
 export class ProfilesService {
-  constructor(private supabaseService: SupabaseService) { }
+  constructor(private supabaseService: SupabaseService) {}
 
-  async findProfileIdByUserId(userId: string, token: string): Promise<ProfileDto> {
+  async findProfileIdByUserId(
+    userId: string,
+    token: string,
+  ): Promise<ProfileDto> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('profiles')
@@ -16,7 +19,9 @@ export class ProfilesService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to find profile for user ${userId}: ${error.message}`);
+      throw new Error(
+        `Failed to find profile for user ${userId}: ${error.message}`,
+      );
     }
 
     return data;
@@ -47,11 +52,17 @@ export class ProfilesService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new Error(`Failed to update last active status for user ${userId}: ${error.message}`);
+      throw new Error(
+        `Failed to update last active status for user ${userId}: ${error.message}`,
+      );
     }
   }
 
-  async approve(profileId: number, approveProfileDto: ApproveProfileDto, token: string): Promise<ProfileDto> {
+  async approve(
+    profileId: number,
+    approveProfileDto: ApproveProfileDto,
+    token: string,
+  ): Promise<ProfileDto> {
     const client = await this.supabaseService.getUserClient(token);
     // First check if profile exists
     const { data: existingProfile, error: fetchError } = await client
@@ -73,9 +84,11 @@ export class ProfilesService {
       .single();
 
     if (updateError) {
-      throw new Error(`Failed to update profile status: ${updateError.message}`);
+      throw new Error(
+        `Failed to update profile status: ${updateError.message}`,
+      );
     }
 
     return updatedProfile;
   }
-} 
+}

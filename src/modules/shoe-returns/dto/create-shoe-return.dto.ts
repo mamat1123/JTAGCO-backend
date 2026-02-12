@@ -1,4 +1,11 @@
-import { IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateShoeReturnDto {
   @IsUUID()
@@ -12,4 +19,4 @@ export class CreateShoeReturnDto {
   @IsOptional()
   @IsString()
   reason?: string;
-} 
+}

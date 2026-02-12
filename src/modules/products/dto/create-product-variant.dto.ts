@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProductVariantAttributes } from '../entities/product-variant.entity';
 
@@ -29,4 +38,4 @@ export class CreateProductVariantDto {
   @Min(0)
   @IsNotEmpty()
   stock: number;
-} 
+}

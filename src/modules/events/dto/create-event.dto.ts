@@ -1,11 +1,8 @@
 import {
-  IsDate,
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   IsArray,
   ValidateNested,
   IsNumber,

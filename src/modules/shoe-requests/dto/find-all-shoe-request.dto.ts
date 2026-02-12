@@ -33,4 +33,4 @@ export class FindAllShoeRequestDto {
   @IsOptional()
   @IsUUID()
   eventId?: string;
-} 
+}

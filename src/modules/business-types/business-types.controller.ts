@@ -23,4 +23,4 @@ export class BusinessTypesController {
     }
     return this.businessTypesService.findAll(token);
   }
-} 
+}

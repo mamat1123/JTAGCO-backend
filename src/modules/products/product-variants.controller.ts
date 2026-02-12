@@ -27,7 +27,9 @@ interface RequestWithUser extends ExpressRequest {
 @Controller('product-variants')
 @UseGuards(SupabaseAuthGuard)
 export class ProductVariantsController {
-  constructor(private readonly productVariantsService: ProductVariantsService) {}
+  constructor(
+    private readonly productVariantsService: ProductVariantsService,
+  ) {}
 
   private getToken(req: RequestWithUser): string {
     const token = req.headers.authorization;
@@ -43,7 +45,10 @@ export class ProductVariantsController {
     @Req() req: RequestWithUser,
   ): Promise<ProductVariant> {
     const token = this.getToken(req);
-    return await this.productVariantsService.create(createProductVariantDto, token);
+    return await this.productVariantsService.create(
+      createProductVariantDto,
+      token,
+    );
   }
 
   @Post('multiple')
@@ -52,7 +57,10 @@ export class ProductVariantsController {
     @Req() req: RequestWithUser,
   ): Promise<ProductVariant[]> {
     const token = this.getToken(req);
-    return await this.productVariantsService.createMultipleVariants(input, token);
+    return await this.productVariantsService.createMultipleVariants(
+      input,
+      token,
+    );
   }
 
   @Get()
@@ -77,7 +85,11 @@ export class ProductVariantsController {
     @Req() req: RequestWithUser,
   ): Promise<ProductVariant> {
     const token = this.getToken(req);
-    return await this.productVariantsService.update(id, updateProductVariantDto, token);
+    return await this.productVariantsService.update(
+      id,
+      updateProductVariantDto,
+      token,
+    );
   }
 
   @Delete(':id')
@@ -89,4 +101,4 @@ export class ProductVariantsController {
     const token = this.getToken(req);
     await this.productVariantsService.remove(id, token);
   }
-} 
+}

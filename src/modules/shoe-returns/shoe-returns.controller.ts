@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ShoeReturnsService } from './shoe-returns.service';
 import { CreateShoeReturnDto } from './dto/create-shoe-return.dto';
 import { ShoeReturnDto } from './dto/shoe-return.dto';
@@ -23,12 +33,19 @@ export class ShoeReturnsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
-    
+    const profile = await this.profilesService.findProfileIdByUserId(
+      req.user.id,
+      token,
+    );
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
-    return this.shoeReturnsService.create(profile.id.toString(), createShoeReturnDto, token);
+    return this.shoeReturnsService.create(
+      profile.id.toString(),
+      createShoeReturnDto,
+      token,
+    );
   }
 
   @Get()
@@ -54,12 +71,20 @@ export class ShoeReturnsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
-    
+    const profile = await this.profilesService.findProfileIdByUserId(
+      req.user.id,
+      token,
+    );
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
-    return this.shoeReturnsService.receive(eventShoeVariantId, receiveShoeReturnDto, profile.id.toString(), token);
+    return this.shoeReturnsService.receive(
+      eventShoeVariantId,
+      receiveShoeReturnDto,
+      profile.id.toString(),
+      token,
+    );
   }
 
   @Get('event-shoe-variant/:eventShoeVariantId')
@@ -72,4 +97,4 @@ export class ShoeReturnsController {
       req.headers.authorization,
     );
   }
-} 
+}

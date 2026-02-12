@@ -3,7 +3,9 @@
  * @param dateString - The date string to format (ISO format or any valid date string)
  * @returns The formatted date string in YYYY-MM-DD format, or undefined if input is undefined
  */
-export const formatDateForDatabase = (dateString: string | undefined): string | undefined => {
+export const formatDateForDatabase = (
+  dateString: string | undefined,
+): string | undefined => {
   if (!dateString) return undefined;
   return new Date(dateString).toISOString().split('T')[0];
 };
@@ -13,7 +15,9 @@ export const formatDateForDatabase = (dateString: string | undefined): string | 
  * @param dateString - The date string to format
  * @returns The formatted date string in ISO format, or undefined if input is undefined
  */
-export const formatDateToISO = (dateString: string | undefined): string | undefined => {
+export const formatDateToISO = (
+  dateString: string | undefined,
+): string | undefined => {
   if (!dateString) return undefined;
   return new Date(dateString).toISOString();
-}; 
+};

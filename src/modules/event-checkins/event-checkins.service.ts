@@ -24,7 +24,10 @@ export class EventCheckinsService {
    * @param eventId - The ID of the event to get check-ins for
    * @returns Promise<EventCheckinDto[]> - Array of event check-ins
    */
-  async getByEventId(eventId: string, token: string): Promise<EventCheckinDto[]> {
+  async getByEventId(
+    eventId: string,
+    token: string,
+  ): Promise<EventCheckinDto[]> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('event_checkins')
@@ -48,6 +51,11 @@ export class EventCheckinsService {
       purchase_months: checkin.purchase_months || [],
       competitor_brand: checkin.competitor_brand,
       special_requirements: checkin.special_requirements,
+      test_result: checkin.test_result,
+      test_result_reason: checkin.test_result_reason,
+      got_job: checkin.got_job,
+      got_job_reason: checkin.got_job_reason,
+      problem_types: checkin.problem_types || [],
       created_at: checkin.created_at,
     }));
   }
@@ -59,7 +67,11 @@ export class EventCheckinsService {
    * @param token - The authentication token
    * @returns Promise<EventCheckinDto> - The created check-in
    */
-  async create(eventId: string, createEventCheckinDto: CreateEventCheckinDto, token: string): Promise<EventCheckinDto> {
+  async create(
+    eventId: string,
+    createEventCheckinDto: CreateEventCheckinDto,
+    token: string,
+  ): Promise<EventCheckinDto> {
     const client = await this.supabaseService.getUserClient(token);
 
     // Get event details to check if it's a visit event and validate date
@@ -81,13 +93,17 @@ export class EventCheckinsService {
       .single();
 
     if (mainTypeError) {
-      throw new Error(`Failed to get event main type: ${mainTypeError.message}`);
+      throw new Error(
+        `Failed to get event main type: ${mainTypeError.message}`,
+      );
     }
 
     // Validate check-in for visit events - must be on the same day as scheduled
     if (this.isVisitEventType(mainType.name)) {
       if (!this.isSameDayAsToday(event.scheduled_at)) {
-        throw new BadRequestException('กิจกรรมนี้ผ่านวันไปแล้วไม่สามารถ checkin ได้');
+        throw new BadRequestException(
+          'กิจกรรมนี้ผ่านวันไปแล้วไม่สามารถ checkin ได้',
+        );
       }
     }
 
@@ -105,17 +121,27 @@ export class EventCheckinsService {
         purchase_months: createEventCheckinDto.purchase_months || [],
         competitor_brand: createEventCheckinDto.competitor_brand,
         special_requirements: createEventCheckinDto.special_requirements,
+        test_result: createEventCheckinDto.test_result,
+        test_result_reason: createEventCheckinDto.test_result_reason,
+        got_job: createEventCheckinDto.got_job,
+        got_job_reason: createEventCheckinDto.got_job_reason,
+        problem_types: createEventCheckinDto.problem_types || [],
       })
       .select()
       .single();
 
     if (checkinError) {
-      throw new Error(`Failed to create event check-in: ${checkinError.message}`);
+      throw new Error(
+        `Failed to create event check-in: ${checkinError.message}`,
+      );
     }
 
     // Insert event images if they exist
-    if (createEventCheckinDto.images && createEventCheckinDto.images.length > 0) {
-      const eventImages = createEventCheckinDto.images.map(url => ({
+    if (
+      createEventCheckinDto.images &&
+      createEventCheckinDto.images.length > 0
+    ) {
+      const eventImages = createEventCheckinDto.images.map((url) => ({
         event_id: eventId,
         url,
         type: 'checkin',
@@ -126,7 +152,9 @@ export class EventCheckinsService {
         .insert(eventImages);
 
       if (imagesError) {
-        throw new Error(`Failed to create event images: ${imagesError.message}`);
+        throw new Error(
+          `Failed to create event images: ${imagesError.message}`,
+        );
       }
     }
 
@@ -154,7 +182,12 @@ export class EventCheckinsService {
       purchase_months: checkin.purchase_months || [],
       competitor_brand: checkin.competitor_brand,
       special_requirements: checkin.special_requirements,
+      test_result: checkin.test_result,
+      test_result_reason: checkin.test_result_reason,
+      got_job: checkin.got_job,
+      got_job_reason: checkin.got_job_reason,
+      problem_types: checkin.problem_types || [],
       created_at: checkin.created_at,
     };
   }
-} 
+}

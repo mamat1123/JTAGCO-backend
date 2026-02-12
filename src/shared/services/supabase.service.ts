@@ -17,8 +17,8 @@ export class SupabaseService {
     this.supabaseClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     });
   }
 
@@ -47,18 +47,22 @@ export class SupabaseService {
     }
 
     // Ensure token is properly formatted
-    const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    const formattedToken = token.startsWith('Bearer ')
+      ? token
+      : `Bearer ${token}`;
 
-    return createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: {
-          Authorization: formattedToken,
+    return await Promise.resolve(
+      createClient(supabaseUrl, supabaseKey, {
+        global: {
+          headers: {
+            Authorization: formattedToken,
+          },
         },
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }),
+    );
   }
-} 
+}

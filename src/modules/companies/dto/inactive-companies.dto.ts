@@ -31,4 +31,4 @@ export class InactiveCompaniesDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc';
-} 
+}

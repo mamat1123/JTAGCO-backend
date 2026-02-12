@@ -6,11 +6,12 @@ import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-  ) {}
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  async create(createProductDto: CreateProductDto, token: string): Promise<Product> {
+  async create(
+    createProductDto: CreateProductDto,
+    token: string,
+  ): Promise<Product> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: product, error } = await client
       .from('products')
@@ -57,7 +58,11 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto, token: string): Promise<Product> {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    token: string,
+  ): Promise<Product> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: product, error } = await client
       .from('products')
@@ -76,14 +81,11 @@ export class ProductsService {
 
   async remove(id: string, token: string): Promise<void> {
     const client = await this.supabaseService.getUserClient(token);
-    const { error } = await client
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const { error } = await client.from('products').delete().eq('id', id);
 
     if (error) {
       console.error('Supabase error:', error);
       throw new Error('Failed to delete product');
     }
   }
-} 
+}

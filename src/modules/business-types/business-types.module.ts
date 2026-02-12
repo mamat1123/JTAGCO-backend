@@ -9,4 +9,4 @@ import { SharedModule } from '../../shared/shared.module';
   providers: [BusinessTypesService],
   exports: [BusinessTypesService],
 })
-export class BusinessTypesModule {} 
+export class BusinessTypesModule {}

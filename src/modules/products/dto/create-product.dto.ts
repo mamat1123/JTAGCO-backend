@@ -1,4 +1,10 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ProductType } from '../entities/product.entity';
 
 export class CreateProductDto {
@@ -17,4 +23,4 @@ export class CreateProductDto {
   @IsNumber()
   @IsOptional()
   priority?: number;
-} 
+}

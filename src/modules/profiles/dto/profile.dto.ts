@@ -26,10 +26,10 @@ export class ProfileDto {
   @ApiProperty({ description: 'Full name' })
   fullname: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Profile status',
     enum: ProfileStatus,
-    example: ProfileStatus.WAIT_FOR_APPROVE
+    example: ProfileStatus.WAIT_FOR_APPROVE,
   })
   status: ProfileStatus;
-} 
+}

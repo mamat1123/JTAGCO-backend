@@ -5,11 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { SharedModule } from '../../shared/shared.module';
 
 @Module({
-  imports: [
-    ConfigModule,
-    SharedModule
-  ],
+  imports: [ConfigModule, SharedModule],
   controllers: [AuthController],
   providers: [AuthService],
 })
-export class AuthModule {} 
+export class AuthModule {}

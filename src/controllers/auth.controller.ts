@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 
 class SignUpDto {
@@ -34,4 +34,4 @@ export class AuthController {
   async getCurrentUser() {
     return this.authService.getCurrentUser();
   }
-} 
+}

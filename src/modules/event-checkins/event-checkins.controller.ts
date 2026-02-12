@@ -1,4 +1,13 @@
-import { Controller, Get, Param, ParseUUIDPipe, Post, Req, UnauthorizedException, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Req,
+  UnauthorizedException,
+  Body,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EventCheckinsService } from './event-checkins.service';
 import { EventCheckinDto } from './dto/event-checkin.dto';
@@ -37,7 +46,10 @@ export class EventCheckinsController {
     description: 'Returns the created check-in',
     type: EventCheckinDto,
   })
-  @ApiResponse({ status: 400, description: 'Invalid event ID format or request body' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid event ID format or request body',
+  })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async createCheckin(
     @Req() req: RequestWithUser,
@@ -48,6 +60,10 @@ export class EventCheckinsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return this.eventCheckinsService.create(eventId, createEventCheckinDto, token);
+    return this.eventCheckinsService.create(
+      eventId,
+      createEventCheckinDto,
+      token,
+    );
   }
-} 
+}

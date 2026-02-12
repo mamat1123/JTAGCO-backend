@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../shared/services/supabase.service';
-import { AuthError, User } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 
 @Injectable()
 export class AuthService {
@@ -34,8 +34,11 @@ export class AuthService {
 
   async getCurrentUser(): Promise<User | null> {
     const client = this.supabaseService.client;
-    const { data: { user }, error } = await client.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await client.auth.getUser();
     if (error) throw error;
     return user;
   }
-} 
+}

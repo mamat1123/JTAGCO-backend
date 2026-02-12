@@ -7,4 +7,4 @@ export interface ShoeReturnDto {
   reason?: string;
   created_at: string;
   returner_name?: string;
-} 
+}

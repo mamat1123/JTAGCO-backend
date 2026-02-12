@@ -1,4 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, UnauthorizedException, Query, NotFoundException, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+  Query,
+  NotFoundException,
+  Headers,
+} from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -27,13 +43,20 @@ export class EventsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
-    
+    const profile = await this.profilesService.findProfileIdByUserId(
+      req.user.id,
+      token,
+    );
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
 
-    return await this.eventsService.create(profile.id.toString(), createEventDto, token);
+    return await this.eventsService.create(
+      profile.id.toString(),
+      createEventDto,
+      token,
+    );
   }
 
   @Get()
@@ -70,7 +93,12 @@ export class EventsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return await this.eventsService.update(req.user.id, id, updateEventDto, token);
+    return await this.eventsService.update(
+      req.user.id,
+      id,
+      updateEventDto,
+      token,
+    );
   }
 
   @Delete(':id')
@@ -88,7 +116,10 @@ export class EventsController {
 
   @Get(':id/request-timeline')
   @ApiOperation({ summary: 'Get event request timeline' })
-  @ApiResponse({ status: 200, description: 'Returns the event request timeline' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the event request timeline',
+  })
   async getEventRequestTimeline(
     @Param('id') id: string,
     @Headers('authorization') token: string,
@@ -98,8 +129,13 @@ export class EventsController {
 
   @Patch(':id/receive-shoe-variants')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Update all event shoe variants status to received' })
-  @ApiResponse({ status: 204, description: 'Event shoe variants status updated successfully' })
+  @ApiOperation({
+    summary: 'Update all event shoe variants status to received',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Event shoe variants status updated successfully',
+  })
   @ApiResponse({ status: 404, description: 'Event not found' })
   async updateEventShoeVariantsToReceive(
     @Param('id') id: string,
@@ -110,4 +146,4 @@ export class EventsController {
     }
     await this.eventsService.updateEventShoeVariantsToReceive(id, token);
   }
-} 
+}

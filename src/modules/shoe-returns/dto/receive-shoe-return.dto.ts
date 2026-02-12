@@ -12,4 +12,4 @@ export class ReceiveShoeReturnDto {
   @IsString()
   @IsNotEmpty()
   shoeRequestId: string;
-} 
+}

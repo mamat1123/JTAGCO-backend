@@ -3,9 +3,7 @@ import { SupabaseService } from '../../../shared/services/supabase.service';
 
 @Injectable()
 export class CompanyIdService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-  ) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
    * Generates a company ID with the following format:
@@ -33,7 +31,10 @@ export class CompanyIdService {
 
     // Get the count of companies for this user in the current month
     try {
-      console.log('Querying companies with pattern:', `${buddhistYear}${month}${formattedUserId}%`);
+      console.log(
+        'Querying companies with pattern:',
+        `${buddhistYear}${month}${formattedUserId}%`,
+      );
       const { data, error } = await client
         .from('companies')
         .select('id')
@@ -47,7 +48,7 @@ export class CompanyIdService {
           details: error.details,
           hint: error.hint,
           code: error.code,
-          query: `${buddhistYear}${month}${formattedUserId}%`
+          query: `${buddhistYear}${month}${formattedUserId}%`,
         });
         throw new Error(`Failed to count companies: ${error.message}`);
       }
@@ -69,4 +70,4 @@ export class CompanyIdService {
       throw error;
     }
   }
-} 
+}

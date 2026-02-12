@@ -225,7 +225,7 @@ export class CompaniesService {
     }
 
     // Get total count
-    const { count, data: companies } = await query;
+    const { count } = await query;
 
     // Get paginated data
     const { data, error } = await query

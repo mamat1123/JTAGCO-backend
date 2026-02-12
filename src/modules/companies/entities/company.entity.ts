@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, ManyToOne, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 // import { BusinessType } from './business-type.entity';
 // import { IssuesEncountered } from './issues-encountered.entity';
 // import { Offers } from './offers.entity';
@@ -96,4 +96,4 @@ export class Company {
 
   @Column({ type: 'jsonb', nullable: true })
   customers: any;
-} 
+}

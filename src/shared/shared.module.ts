@@ -7,15 +7,7 @@ import { AuthGuard } from './guards/auth.guard';
 @Global()
 @Module({
   imports: [ConfigModule],
-  providers: [
-    SupabaseService,
-    AuthService,
-    AuthGuard,
-  ],
-  exports: [
-    SupabaseService,
-    AuthService,
-    AuthGuard,
-  ],
+  providers: [SupabaseService, AuthService, AuthGuard],
+  exports: [SupabaseService, AuthService, AuthGuard],
 })
-export class SharedModule {} 
+export class SharedModule {}

@@ -95,4 +95,4 @@ export class ProductsController {
     const token = this.getToken(req);
     await this.productsService.remove(id, token);
   }
-} 
+}

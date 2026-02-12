@@ -7,6 +7,6 @@ import { SharedModule } from '../../shared/shared.module';
   imports: [SharedModule],
   controllers: [ProfilesController],
   providers: [ProfilesService],
-  exports: [ProfilesService]
+  exports: [ProfilesService],
 })
-export class ProfilesModule {} 
+export class ProfilesModule {}

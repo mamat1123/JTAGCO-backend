@@ -8,7 +8,7 @@ export class EventMainTypesService {
 
   async findAll(token: string): Promise<EventMainTypeDto[]> {
     const client = await this.supabaseService.getUserClient(token);
-    
+
     const { data, error } = await client
       .from('event_main_types')
       .select('*')
@@ -20,4 +20,4 @@ export class EventMainTypesService {
 
     return data;
   }
-} 
+}

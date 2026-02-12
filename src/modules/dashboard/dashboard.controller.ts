@@ -16,11 +16,13 @@ export class DashboardController {
    * Get dashboard metrics for the current month with month-over-month changes
    */
   @Get('sales/metrics')
-  async getSalesMetrics(@Req() req: RequestWithUser): Promise<DashboardMetricsDto> {
+  async getSalesMetrics(
+    @Req() req: RequestWithUser,
+  ): Promise<DashboardMetricsDto> {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       throw new Error('No authorization token provided');
     }
     return this.dashboardService.getSalesMetrics(token);
   }
-} 
+}

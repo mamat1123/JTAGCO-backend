@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TaggedProductDto {
@@ -11,4 +11,4 @@ export class TaggedProductDto {
   @IsNumber()
   @ApiProperty({ description: 'Price for this product in the event' })
   price: number;
-} 
+}

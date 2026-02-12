@@ -74,16 +74,29 @@ export class Event {
   })
   status: EventStatus;
 
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt: Date;
 
-  @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   updatedAt: Date;
 
   @Column({ name: 'sales_before_vat', type: 'int', nullable: true })
   salesBeforeVat: number;
 
-  @Column({ name: 'business_type', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'business_type',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   businessType: string;
 
   @Column({ name: 'shoe_order_quantity', type: 'int', nullable: true })
@@ -92,7 +105,12 @@ export class Event {
   @Column({ name: 'has_appointment', type: 'boolean', nullable: true })
   hasAppointment: boolean;
 
-  @Column({ name: 'purchase_months', type: 'text', array: true, nullable: true })
+  @Column({
+    name: 'purchase_months',
+    type: 'text',
+    array: true,
+    nullable: true,
+  })
   purchaseMonths: string[];
 
   @Column({ name: 'test_result', type: 'varchar', length: 50, nullable: true })
@@ -107,7 +125,12 @@ export class Event {
   @Column({ name: 'got_job_reason', type: 'text', nullable: true })
   gotJobReason: string;
 
-  @Column({ name: 'problem_type', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'problem_type',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   problemType: string;
 
   @Column({ name: 'present_time', type: 'time', nullable: true })
@@ -121,4 +144,4 @@ export class Event {
   eventImages?: EventImage[];
   eventShoeVariants?: EventShoeVariant[];
   taggedProducts?: TaggedProduct[];
-} 
+}

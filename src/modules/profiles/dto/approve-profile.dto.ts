@@ -4,15 +4,15 @@ import { IsEnum } from 'class-validator';
 export enum ProfileStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  WAIT_FOR_APPROVE = 'wait_for_approve'
+  WAIT_FOR_APPROVE = 'wait_for_approve',
 }
 
 export class ApproveProfileDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Profile status',
     enum: ProfileStatus,
-    example: ProfileStatus.APPROVED
+    example: ProfileStatus.APPROVED,
   })
   @IsEnum(ProfileStatus)
   status: ProfileStatus;
-} 
+}

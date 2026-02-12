@@ -40,4 +40,4 @@ export class QueryEventDto {
   @IsOptional()
   @IsString()
   tagged_product_id?: string;
-} 
+}

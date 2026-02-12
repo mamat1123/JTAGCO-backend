@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -15,7 +21,7 @@ export class CustomerService {
 
   private async generateCustomerId(token: string): Promise<string> {
     const client = await this.supabaseService.getUserClient(token);
-    
+
     // Get the latest customer ID
     const { data: latestCustomer, error } = await client
       .from('customer')
@@ -24,7 +30,8 @@ export class CustomerService {
       .limit(1)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "no rows returned" error
       console.error('Error fetching latest customer ID:', error);
       throw new Error('Failed to generate customer ID');
     }
@@ -39,12 +46,22 @@ export class CustomerService {
     return nextNumber.toString();
   }
 
-  async create(userId: string, createCustomerDto: CreateCustomerDto, token: string): Promise<Customer> {
+  async create(
+    userId: string,
+    createCustomerDto: CreateCustomerDto,
+    token: string,
+  ): Promise<Customer> {
     // Verify company exists before creating customer
-    const company = await this.companiesService.findOne(createCustomerDto.company_id, userId, token);
+    const company = await this.companiesService.findOne(
+      createCustomerDto.company_id,
+      userId,
+      token,
+    );
 
     if (!company) {
-      throw new BadRequestException(`Company with ID ${createCustomerDto.company_id} not found`);
+      throw new BadRequestException(
+        `Company with ID ${createCustomerDto.company_id} not found`,
+      );
     }
 
     // Get authenticated client for RLS
@@ -67,7 +84,9 @@ export class CustomerService {
     if (error) {
       console.error('Supabase error:', error);
       if (error.code === '23505') {
-        throw new BadRequestException('A customer with this information already exists');
+        throw new BadRequestException(
+          'A customer with this information already exists',
+        );
       }
       throw new Error('Failed to create customer');
     }
@@ -110,7 +129,12 @@ export class CustomerService {
     return customer;
   }
 
-  async update(userId: string, id: string, updateCustomerDto: UpdateCustomerDto, token: string): Promise<Customer> {
+  async update(
+    userId: string,
+    id: string,
+    updateCustomerDto: UpdateCustomerDto,
+    token: string,
+  ): Promise<Customer> {
     // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
 
@@ -133,10 +157,7 @@ export class CustomerService {
     // Get authenticated client for RLS
     const client = await this.supabaseService.getUserClient(token);
 
-    const { error } = await client
-      .from('customer')
-      .delete()
-      .eq('id', id);
+    const { error } = await client.from('customer').delete().eq('id', id);
 
     if (error) {
       console.error('Supabase error:', error);
@@ -161,4 +182,4 @@ export class CustomerService {
 
     return customers;
   }
-} 
+}

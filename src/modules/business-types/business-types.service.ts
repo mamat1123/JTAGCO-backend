@@ -8,7 +8,7 @@ export class BusinessTypesService {
 
   async findAll(token: string): Promise<BusinessTypeDto[]> {
     const supabase = await this.supabaseService.getUserClient(token);
-    
+
     const { data, error } = await supabase
       .from('business_types')
       .select('*')
@@ -20,4 +20,4 @@ export class BusinessTypesService {
 
     return data as BusinessTypeDto[];
   }
-} 
+}

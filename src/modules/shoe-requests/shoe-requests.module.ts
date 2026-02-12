@@ -10,4 +10,4 @@ import { ProfilesModule } from '../profiles/profiles.module';
   providers: [ShoeRequestsService],
   exports: [ShoeRequestsService],
 })
-export class ShoeRequestsModule {} 
+export class ShoeRequestsModule {}

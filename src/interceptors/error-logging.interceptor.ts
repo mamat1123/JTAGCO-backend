@@ -1,4 +1,10 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  HttpException,
+} from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -9,7 +15,7 @@ export class ErrorLoggingInterceptor implements NestInterceptor {
     const { method, url, body, headers, ip } = request;
 
     return next.handle().pipe(
-      catchError(error => {
+      catchError((error) => {
         // Log error details
         console.error('Error occurred:', {
           timestamp: new Date().toISOString(),
@@ -22,7 +28,7 @@ export class ErrorLoggingInterceptor implements NestInterceptor {
             message: error.message,
             stack: error.stack,
             status: error.status || 500,
-          }
+          },
         });
 
         // If it's already an HttpException, rethrow it
@@ -31,14 +37,17 @@ export class ErrorLoggingInterceptor implements NestInterceptor {
         }
 
         // For other errors, wrap them in HttpException
-        return throwError(() => new HttpException(
-          {
-            message: error.message || 'Internal server error',
-            error: 'Internal Server Error'
-          },
-          error.status || 500
-        ));
-      })
+        return throwError(
+          () =>
+            new HttpException(
+              {
+                message: error.message || 'Internal server error',
+                error: 'Internal Server Error',
+              },
+              error.status || 500,
+            ),
+        );
+      }),
     );
   }
-} 
+}

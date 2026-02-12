@@ -6,11 +6,13 @@ import { FindAllShoeRequestDto } from './dto/find-all-shoe-request.dto';
 
 @Injectable()
 export class ShoeRequestsService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-  ) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  async create(userId: string, createShoeRequestDto: CreateShoeRequestDto, token: string): Promise<ShoeRequestDto> {
+  async create(
+    userId: string,
+    createShoeRequestDto: CreateShoeRequestDto,
+    token: string,
+  ): Promise<ShoeRequestDto> {
     const client = await this.supabaseService.getUserClient(token);
 
     const { data: shoeRequest, error } = await client
@@ -43,7 +45,8 @@ export class ShoeRequestsService {
 
     let queryBuilder = client
       .from('shoe_requests')
-      .select(`
+      .select(
+        `
         id,
         quantity,
         status,
@@ -86,7 +89,9 @@ export class ShoeRequestsService {
             fullname
           )
         )
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' },
+      )
       .order('created_at', { ascending: false });
 
     if (eventId) {
@@ -106,14 +111,24 @@ export class ShoeRequestsService {
         `);
       }
       if (query.productName) {
-        queryBuilder = queryBuilder.ilike('product_variants.products.name', `%${query.productName}%`);
+        queryBuilder = queryBuilder.ilike(
+          'product_variants.products.name',
+          `%${query.productName}%`,
+        );
       }
       if (query.requesterName) {
-        queryBuilder = queryBuilder.ilike('requesters.fullname', `%${query.requesterName}%`);
+        queryBuilder = queryBuilder.ilike(
+          'requesters.fullname',
+          `%${query.requesterName}%`,
+        );
       }
     }
 
-    const { data: shoeRequests, error, count } = await queryBuilder.range(start, end);
+    const {
+      data: shoeRequests,
+      error,
+      count,
+    } = await queryBuilder.range(start, end);
 
     if (error) {
       console.error('Supabase error:', error);
@@ -122,8 +137,8 @@ export class ShoeRequestsService {
 
     // === Batch fetch event_shoe_variants ===
     const uniqueKeys = Array.from(
-      new Set(shoeRequests.map(r => `${r.event_id}__${r.variant_id}`))
-    ).map(key => {
+      new Set(shoeRequests.map((r) => `${r.event_id}__${r.variant_id}`)),
+    ).map((key) => {
       const [event_id, shoe_variant_id] = key.split('__');
       return { event_id, shoe_variant_id };
     });
@@ -133,8 +148,14 @@ export class ShoeRequestsService {
       const { data, error: variantError } = await client
         .from('event_shoe_variants')
         .select('id, event_id, shoe_variant_id')
-        .in('event_id', uniqueKeys.map(k => k.event_id))
-        .in('shoe_variant_id', uniqueKeys.map(k => k.shoe_variant_id));
+        .in(
+          'event_id',
+          uniqueKeys.map((k) => k.event_id),
+        )
+        .in(
+          'shoe_variant_id',
+          uniqueKeys.map((k) => k.shoe_variant_id),
+        );
 
       if (variantError) {
         console.error('Supabase error:', variantError);
@@ -164,15 +185,17 @@ export class ShoeRequestsService {
           };
         }
 
-        const returnedQuantity = curr.shoe_returns?.reduce((sum, ret) => sum + ret.quantity, 0) || 0;
+        const returnedQuantity =
+          curr.shoe_returns?.reduce((sum, ret) => sum + ret.quantity, 0) || 0;
         const isFullyReturned = returnedQuantity >= curr.quantity;
 
         // Transform shoe_returns to include returner names
-        const transformedReturns = curr.shoe_returns?.map(ret => ({
-          ...ret,
-          returner_name: (ret.returners as any)?.fullname || 'Unknown',
-          returners: undefined, // Remove the nested object
-        })) || [];
+        const transformedReturns =
+          curr.shoe_returns?.map((ret) => ({
+            ...ret,
+            returner_name: (ret.returners as any)?.fullname || 'Unknown',
+            returners: undefined, // Remove the nested object
+          })) || [];
 
         acc[eventId].products.push({
           id: curr.id,
@@ -191,7 +214,7 @@ export class ShoeRequestsService {
         });
 
         return acc;
-      }, {})
+      }, {}),
     );
 
     return {
@@ -200,17 +223,12 @@ export class ShoeRequestsService {
     };
   }
 
-
-
-
-
-
-
   async findOne(id: string, token: string): Promise<ShoeRequestDto> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: shoeRequest, error } = await client
       .from('shoe_requests')
-      .select(`
+      .select(
+        `
         *,
         events:event_id (description),
         product_variants:shoe_variant_id (
@@ -226,7 +244,8 @@ export class ShoeRequestsService {
         ),
         requesters:requested_by (fullname),
         approvers:approved_by (fullname)
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -281,15 +300,21 @@ export class ShoeRequestsService {
     return this.transformShoeRequestData(shoeRequest);
   }
 
-  async createMany(userId: string, shoeRequests: CreateShoeRequestDto[], token: string): Promise<ShoeRequestDto[]> {
+  async createMany(
+    userId: string,
+    shoeRequests: CreateShoeRequestDto[],
+    token: string,
+  ): Promise<ShoeRequestDto[]> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('shoe_requests')
-      .insert(shoeRequests.map(request => ({
-        ...request,
-        requested_by: userId,
-        status: ShoeRequestStatus.PENDING,
-      })))
+      .insert(
+        shoeRequests.map((request) => ({
+          ...request,
+          requested_by: userId,
+          status: ShoeRequestStatus.PENDING,
+        })),
+      )
       .select();
 
     if (error) {
@@ -297,7 +322,7 @@ export class ShoeRequestsService {
       throw new Error('Failed to create shoe requests');
     }
 
-    return data.map(request => this.transformShoeRequestData(request));
+    return data.map((request) => this.transformShoeRequestData(request));
   }
 
   private transformShoeRequestData(shoeRequest: any): ShoeRequestDto {
@@ -318,4 +343,4 @@ export class ShoeRequestsService {
       approvers: undefined,
     };
   }
-} 
+}

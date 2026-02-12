@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -19,13 +30,17 @@ export class CustomerController {
   @Post()
   async create(
     @Req() req: RequestWithUser,
-    @Body() createCustomerDto: CreateCustomerDto
+    @Body() createCustomerDto: CreateCustomerDto,
   ): Promise<Customer> {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return await this.customerService.create(req.user.id, createCustomerDto, token);
+    return await this.customerService.create(
+      req.user.id,
+      createCustomerDto,
+      token,
+    );
   }
 
   @Get()
@@ -40,7 +55,7 @@ export class CustomerController {
   @Get(':id')
   async findOne(
     @Req() req: RequestWithUser,
-    @Param('id') id: string
+    @Param('id') id: string,
   ): Promise<Customer> {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -59,13 +74,18 @@ export class CustomerController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    return await this.customerService.update(req.user.id, id, updateCustomerDto, token);
+    return await this.customerService.update(
+      req.user.id,
+      id,
+      updateCustomerDto,
+      token,
+    );
   }
 
   @Delete(':id')
   async remove(
     @Req() req: RequestWithUser,
-    @Param('id') id: string
+    @Param('id') id: string,
   ): Promise<void> {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -75,11 +95,14 @@ export class CustomerController {
   }
 
   @Get('company/:companyId')
-  async findByCompanyId(@Req() req: RequestWithUser, @Param('companyId') companyId: string) {
+  async findByCompanyId(
+    @Req() req: RequestWithUser,
+    @Param('companyId') companyId: string,
+  ) {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
     return await this.customerService.findByCompanyId(companyId, token);
   }
-} 
+}

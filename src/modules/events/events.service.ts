@@ -231,17 +231,17 @@ export class EventsService {
     }
 
     if (query.scheduled_at_start) {
-      queryBuilder = queryBuilder.gte(
-        'scheduled_at',
-        query.scheduled_at_start.toISOString().split('T')[0],
-      );
+      const startDate = new Date(query.scheduled_at_start);
+      startDate.setHours(0, 0, 0, 0);
+      const startDateMidnight = startDate.toISOString();
+      queryBuilder = queryBuilder.gte('scheduled_at', startDateMidnight);
     }
 
     if (query.scheduled_at_end) {
-      queryBuilder = queryBuilder.lte(
-        'scheduled_at',
-        query.scheduled_at_end.toISOString().split('T')[0],
-      );
+      const endDate = new Date(query.scheduled_at_end);
+      endDate.setHours(23, 59, 59, 999);
+      const endDateEndOfDay = endDate.toISOString();
+      queryBuilder = queryBuilder.lte('scheduled_at', endDateEndOfDay);
     }
 
     if (query.main_type_id) {
@@ -378,7 +378,7 @@ export class EventsService {
       }
     }
 
-    const { data: event, error } = await client
+    const { error: updateError } = await client
       .from('events')
       .update(eventUpdateData)
       .eq('id', id)
@@ -391,8 +391,8 @@ export class EventsService {
       )
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (updateError) {
+      console.error('Supabase error:', updateError);
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
 
@@ -538,7 +538,7 @@ export class EventsService {
 
     const firstRequest = shoeRequests[0];
     const allApproved = shoeRequests.every((r) => r.status !== 'pending');
-    const anyApproved = shoeRequests.some((r) => r.status === 'approved');
+    // anyApproved not currently used in timeline steps
     const received = variants.some((v) => v.status === 'received');
     const latestReturn = returns.sort(
       (a, b) =>

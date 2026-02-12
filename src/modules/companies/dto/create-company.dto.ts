@@ -1,5 +1,13 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  Max,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateCompanyDto {
   @IsNotEmpty()
@@ -110,4 +118,4 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsString()
   issues_encountered_list?: string;
-} 
+}

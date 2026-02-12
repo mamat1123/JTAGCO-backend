@@ -1,4 +1,12 @@
-import { IsDate, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateShoeRequestDto {
@@ -27,4 +35,4 @@ export class CreateShoeRequestDto {
   @Type(() => Date)
   @IsDate()
   pickup_date?: Date;
-} 
+}

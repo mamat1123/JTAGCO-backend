@@ -1,23 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
-import { DashboardMetricsDto, BestSalesUserDto } from './dto/dashboard-metrics.dto';
+import {
+  DashboardMetricsDto,
+  BestSalesUserDto,
+} from './dto/dashboard-metrics.dto';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly supabaseService: SupabaseService) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
    * Calculates dashboard metrics for the current month and compares with previous month
    */
   async getSalesMetrics(token: string): Promise<DashboardMetricsDto> {
     const currentDate = new Date();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const firstDayOfLastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const firstDayOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1,
+    );
+    const firstDayOfLastMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - 1,
+      1,
+    );
 
-    const [
-      currentMonthMetrics,
-      lastMonthMetrics,
-    ] = await Promise.all([
+    const [currentMonthMetrics, lastMonthMetrics] = await Promise.all([
       this.calculateMonthMetrics(firstDayOfMonth, token),
       this.calculateMonthMetrics(firstDayOfLastMonth, token),
     ]);
@@ -45,16 +53,25 @@ export class DashboardService {
   /**
    * Calculates metrics for a specific month
    */
-  private async calculateMonthMetrics(startDate: Date, token: string): Promise<{
+  private async calculateMonthMetrics(
+    startDate: Date,
+    token: string,
+  ): Promise<{
     newCompanies: number;
     eventSuccessRate: number;
     bestSalesUser: BestSalesUserDto;
     createdEvents: number;
   }> {
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+    const endDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth() + 1,
+      0,
+    );
     const client = await this.supabaseService.getUserClient(token);
 
-    const { data: bestSalesUser, error } = await client.rpc('best_sales_user_last_month');
+    const { data: bestSalesUser, error } = await client.rpc(
+      'best_sales_user_last_month',
+    );
 
     if (error) {
       console.error('Error fetching best sales user:', error);
@@ -92,12 +109,13 @@ export class DashboardService {
 
     return {
       newCompanies: newCompanies || 0,
-      eventSuccessRate: totalEvents ? Number((((totalCheckins || 0) / totalEvents) * 100).toFixed(2)) : 0,
+      eventSuccessRate: totalEvents
+        ? Number((((totalCheckins || 0) / totalEvents) * 100).toFixed(2))
+        : 0,
       bestSalesUser: bestSalesUser[0],
       createdEvents: createdEvents || 0,
     };
   }
-
 
   /**
    * Calculates the percentage change between two values
@@ -106,4 +124,4 @@ export class DashboardService {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Number((((current - previous) / previous) * 100).toFixed(2));
   }
-} 
+}

@@ -12,4 +12,4 @@ export class DashboardMetricsDto {
   bestSalesUser: BestSalesUserDto;
   createdEvents: number;
   createdEventsChange: number;
-} 
+}

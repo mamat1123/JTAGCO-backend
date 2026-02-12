@@ -19,9 +19,14 @@ export class AuthService {
 
     try {
       // Format token for validation
-      const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      const formattedToken = token.startsWith('Bearer ')
+        ? token
+        : `Bearer ${token}`;
       const client = await this.supabaseService.getUserClient(formattedToken);
-      const { data: { user }, error } = await client.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await client.auth.getUser();
 
       if (error || !user) {
         console.error('Token validation error:', error);
@@ -34,4 +39,4 @@ export class AuthService {
       throw new UnauthorizedException('Failed to validate token');
     }
   }
-} 
+}

@@ -5,12 +5,9 @@ import { CompaniesModule } from '../companies/companies.module';
 import { SharedModule } from '../../shared/shared.module';
 
 @Module({
-  imports: [
-    forwardRef(() => CompaniesModule),
-    SharedModule
-  ],
+  imports: [forwardRef(() => CompaniesModule), SharedModule],
   controllers: [CustomerController],
   providers: [CustomerService],
   exports: [CustomerService],
 })
-export class CustomerModule {} 
+export class CustomerModule {}

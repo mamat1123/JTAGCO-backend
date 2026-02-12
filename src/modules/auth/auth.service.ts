@@ -6,9 +6,7 @@ import { ProfileStatus } from '../profiles/dto/approve-profile.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private supabaseService: SupabaseService,
-  ) { }
+  constructor(private supabaseService: SupabaseService) {}
 
   async register(registerDto: RegisterDto) {
     try {
@@ -27,14 +25,16 @@ export class AuthService {
             role,
             user_email: mockEmail,
             email,
-            fullname
-          }
-        }
+            fullname,
+          },
+        },
       });
 
       if (authError) {
         console.error('Supabase Auth Error:', authError);
-        throw new UnauthorizedException(authError.message || 'Registration failed');
+        throw new UnauthorizedException(
+          authError.message || 'Registration failed',
+        );
       }
 
       if (!authData.user) {
@@ -42,7 +42,7 @@ export class AuthService {
       }
 
       // Wait for the profile to be created (trigger should handle this)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Get the created profile
       const { data: profile, error: profileError } = await client
@@ -65,7 +65,7 @@ export class AuthService {
           username: profile.username,
           phone: profile.phone,
           role: profile.role,
-        }
+        },
       };
     } catch (error) {
       console.error('Registration Error:', error);
@@ -79,10 +79,11 @@ export class AuthService {
 
       const mockEmail = `${username}@jtagco.com`;
       const client = this.supabaseService.client;
-      const { data: authData, error: authError } = await client.auth.signInWithPassword({
-        email: mockEmail,
-        password
-      });
+      const { data: authData, error: authError } =
+        await client.auth.signInWithPassword({
+          email: mockEmail,
+          password,
+        });
 
       if (authError) {
         console.error('Login Error:', authError);
@@ -114,12 +115,12 @@ export class AuthService {
           email: authData.user.email,
           username: profile.username,
           phone: profile.phone,
-          role: profile.role
-        }
+          role: profile.role,
+        },
       };
     } catch (error) {
       console.error('Login Error:', error);
       throw new UnauthorizedException(error.message || 'Login failed');
     }
   }
-} 
+}

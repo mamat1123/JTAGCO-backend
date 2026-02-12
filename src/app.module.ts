@@ -38,4 +38,4 @@ import { ShoeReturnsModule } from './modules/shoe-returns/shoe-returns.module';
     ShoeReturnsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

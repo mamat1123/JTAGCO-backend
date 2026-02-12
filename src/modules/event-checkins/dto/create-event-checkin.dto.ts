@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ProductSelectionDto {
@@ -24,18 +24,29 @@ export class ProductSelectionDto {
 }
 
 export class CreateEventCheckinDto {
-  @ApiProperty({ description: 'Additional details about the check-in', required: false })
+  @ApiProperty({
+    description: 'Additional details about the check-in',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   detail?: string;
 
-  @ApiProperty({ description: 'Array of image URLs for the check-in', type: [String], required: false })
+  @ApiProperty({
+    description: 'Array of image URLs for the check-in',
+    type: [String],
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   images?: string[];
 
-  @ApiProperty({ description: 'Product selections for PRESENT check-in', type: [ProductSelectionDto], required: false })
+  @ApiProperty({
+    description: 'Product selections for PRESENT check-in',
+    type: [ProductSelectionDto],
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -47,12 +58,19 @@ export class CreateEventCheckinDto {
   @IsString()
   delivery_duration?: string;
 
-  @ApiProperty({ description: 'Purchase type (monthly/yearly)', required: false })
+  @ApiProperty({
+    description: 'Purchase type (monthly/yearly)',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   purchase_type?: string;
 
-  @ApiProperty({ description: 'Purchase months', type: [String], required: false })
+  @ApiProperty({
+    description: 'Purchase months',
+    type: [String],
+    required: false,
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -67,4 +85,34 @@ export class CreateEventCheckinDto {
   @IsOptional()
   @IsString()
   special_requirements?: string;
+
+  @ApiProperty({ description: 'Test result (pass/fail)', required: false })
+  @IsOptional()
+  @IsString()
+  test_result?: string;
+
+  @ApiProperty({ description: 'Reason for test failure', required: false })
+  @IsOptional()
+  @IsString()
+  test_result_reason?: string;
+
+  @ApiProperty({ description: 'Got job (yes/no)', required: false })
+  @IsOptional()
+  @IsString()
+  got_job?: string;
+
+  @ApiProperty({ description: 'Reason for not getting job', required: false })
+  @IsOptional()
+  @IsString()
+  got_job_reason?: string;
+
+  @ApiProperty({
+    description: 'Problem types for FOUND_PROBLEM check-in',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  problem_types?: string[];
 }

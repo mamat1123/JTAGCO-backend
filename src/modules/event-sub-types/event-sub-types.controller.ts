@@ -1,7 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Headers,
+  UseGuards,
+} from '@nestjs/common';
 import { EventSubTypesService } from './event-sub-types.service';
 import { EventSubTypeResponseDto } from './dto/event-sub-type.dto';
-import { CreateEventSubTypeDto, UpdateEventSubTypeDto } from './dto/event-sub-type.dto';
+import {
+  CreateEventSubTypeDto,
+  UpdateEventSubTypeDto,
+} from './dto/event-sub-type.dto';
 import { SupabaseAuthGuard } from '../../shared/guards/supabase-auth.guard';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -18,7 +31,9 @@ export class EventSubTypesController {
     description: 'Returns all event sub types',
     type: [EventSubTypeResponseDto],
   })
-  async findAll(@Headers('authorization') token: string): Promise<EventSubTypeResponseDto[]> {
+  async findAll(
+    @Headers('authorization') token: string,
+  ): Promise<EventSubTypeResponseDto[]> {
     return this.eventSubTypesService.findAll(token);
   }
 
@@ -77,4 +92,4 @@ export class EventSubTypesController {
   ): Promise<void> {
     return this.eventSubTypesService.remove(id, token);
   }
-} 
+}

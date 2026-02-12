@@ -1,4 +1,12 @@
-import { IsDate, IsEnum, IsInt, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export enum ShoeRequestStatus {
   PENDING = 'pending',
@@ -67,4 +75,4 @@ export class ShoeRequestDto {
   attributes?: any;
   requesterName?: string;
   approverName?: string;
-} 
+}

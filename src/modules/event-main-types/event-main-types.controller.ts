@@ -15,7 +15,9 @@ export class EventMainTypesController {
     description: 'Returns all event main types',
     type: [EventMainTypeDto],
   })
-  async findAll(@Headers('authorization') token: string): Promise<EventMainTypeDto[]> {
+  async findAll(
+    @Headers('authorization') token: string,
+  ): Promise<EventMainTypeDto[]> {
     return this.eventMainTypesService.findAll(token);
   }
-} 
+}

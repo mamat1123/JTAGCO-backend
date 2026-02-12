@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Query,
+  Patch,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ShoeRequestsService } from './shoe-requests.service';
 import { CreateShoeRequestDto } from './dto/create-shoe-request.dto';
 import { ShoeRequestDto } from './dto/shoe-request.dto';
@@ -24,20 +36,31 @@ export class ShoeRequestsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
-    
+    const profile = await this.profilesService.findProfileIdByUserId(
+      req.user.id,
+      token,
+    );
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
-    return this.shoeRequestsService.create(profile.id.toString(), createShoeRequestDto, token);
+    return this.shoeRequestsService.create(
+      profile.id.toString(),
+      createShoeRequestDto,
+      token,
+    );
   }
 
   @Get()
   async findAll(
     @Request() req,
     @Query() query: FindAllShoeRequestDto,
-  ): Promise<{ data: ShoeRequestDto[], total: number }> {
-    return this.shoeRequestsService.findAll(req.headers.authorization, query.eventId, query);
+  ): Promise<{ data: ShoeRequestDto[]; total: number }> {
+    return this.shoeRequestsService.findAll(
+      req.headers.authorization,
+      query.eventId,
+      query,
+    );
   }
 
   @Get(':id')
@@ -59,8 +82,11 @@ export class ShoeRequestsController {
     if (!token) {
       throw new UnauthorizedException('No token provided');
     }
-    const profile = await this.profilesService.findProfileIdByUserId(req.user.id, token);
-    
+    const profile = await this.profilesService.findProfileIdByUserId(
+      req.user.id,
+      token,
+    );
+
     if (!profile) {
       throw new NotFoundException('User profile not found');
     }
@@ -72,4 +98,4 @@ export class ShoeRequestsController {
       reason,
     );
   }
-} 
+}

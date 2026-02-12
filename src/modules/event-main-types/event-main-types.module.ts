@@ -9,4 +9,4 @@ import { SharedModule } from '../../shared/shared.module';
   providers: [EventMainTypesService],
   exports: [EventMainTypesService],
 })
-export class EventMainTypesModule {} 
+export class EventMainTypesModule {}

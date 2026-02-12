@@ -11,4 +11,4 @@ import { ShoeRequestsModule } from '../shoe-requests/shoe-requests.module';
   providers: [EventsService],
   exports: [EventsService],
 })
-export class EventsModule {} 
+export class EventsModule {}

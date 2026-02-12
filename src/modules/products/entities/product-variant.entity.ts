@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Product } from './product.entity';
 
 export interface ProductVariantAttributes {
@@ -40,4 +47,4 @@ export class ProductVariant {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
-} 
+}

@@ -7,11 +7,12 @@ import { transformVariantToCombinations } from './utils/variant-transformer.util
 
 @Injectable()
 export class ProductVariantsService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-  ) {}
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  async create(createProductVariantDto: CreateProductVariantDto, token: string): Promise<ProductVariant> {
+  async create(
+    createProductVariantDto: CreateProductVariantDto,
+    token: string,
+  ): Promise<ProductVariant> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: variant, error } = await client
       .from('product_variants')
@@ -27,10 +28,13 @@ export class ProductVariantsService {
     return variant;
   }
 
-  async createMultipleVariants(input: any, token: string): Promise<ProductVariant[]> {
+  async createMultipleVariants(
+    input: any,
+    token: string,
+  ): Promise<ProductVariant[]> {
     const variants = transformVariantToCombinations(input);
     const client = await this.supabaseService.getUserClient(token);
-    
+
     const { data, error } = await client
       .from('product_variants')
       .insert(variants)
@@ -48,10 +52,12 @@ export class ProductVariantsService {
     const client = await this.supabaseService.getUserClient(token);
     const { data: variants, error } = await client
       .from('product_variants')
-      .select(`
+      .select(
+        `
         *,
         product:products(*)
-      `)
+      `,
+      )
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -62,14 +68,19 @@ export class ProductVariantsService {
     return variants;
   }
 
-  async findByProductId(productId: string, token: string): Promise<ProductVariant[]> {
+  async findByProductId(
+    productId: string,
+    token: string,
+  ): Promise<ProductVariant[]> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: variants, error } = await client
       .from('product_variants')
-      .select(`
+      .select(
+        `
         *,
         product:products(*)
-      `)
+      `,
+      )
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
@@ -85,10 +96,12 @@ export class ProductVariantsService {
     const client = await this.supabaseService.getUserClient(token);
     const { data: variant, error } = await client
       .from('product_variants')
-      .select(`
+      .select(
+        `
         *,
         product:products(*)
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -100,7 +113,11 @@ export class ProductVariantsService {
     return variant;
   }
 
-  async update(id: string, updateProductVariantDto: UpdateProductVariantDto, token: string): Promise<ProductVariant> {
+  async update(
+    id: string,
+    updateProductVariantDto: UpdateProductVariantDto,
+    token: string,
+  ): Promise<ProductVariant> {
     const client = await this.supabaseService.getUserClient(token);
     const { data: variant, error } = await client
       .from('product_variants')
@@ -129,4 +146,4 @@ export class ProductVariantsService {
       throw new Error('Failed to delete product variant');
     }
   }
-} 
+}

@@ -5,7 +5,7 @@ export class InactiveCompany {
   branch: string;
   totalEmployees: number;
   credit: number;
-} 
+}
 
 export class InactiveCompanyStats {
   total_companies: number;

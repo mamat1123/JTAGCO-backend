@@ -1,22 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { EventSubTypeResponseDto } from './dto/event-sub-type.dto';
-import { CreateEventSubTypeDto, UpdateEventSubTypeDto } from './dto/event-sub-type.dto';
+import {
+  CreateEventSubTypeDto,
+  UpdateEventSubTypeDto,
+} from './dto/event-sub-type.dto';
 
 @Injectable()
 export class EventSubTypesService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-  ) { }
+  constructor(private readonly supabaseService: SupabaseService) {}
 
   async findAll(token: string): Promise<EventSubTypeResponseDto[]> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('event_sub_types')
-      .select(`
+      .select(
+        `
         *,
         main_type:main_type_id (*)
-      `)
+      `,
+      )
       .order('id', { ascending: true });
 
     if (error) {
@@ -27,14 +30,19 @@ export class EventSubTypesService {
     return data;
   }
 
-  async findByMainTypeId(mainTypeId: number, token: string): Promise<EventSubTypeResponseDto[]> {
+  async findByMainTypeId(
+    mainTypeId: number,
+    token: string,
+  ): Promise<EventSubTypeResponseDto[]> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('event_sub_types')
-      .select(`
+      .select(
+        `
         *,
         main_type:main_type_id (*)
-      `)
+      `,
+      )
       .eq('main_type_id', mainTypeId)
       .order('id', { ascending: true });
 
@@ -46,15 +54,20 @@ export class EventSubTypesService {
     return data;
   }
 
-  async create(createEventSubTypeDto: CreateEventSubTypeDto, token: string): Promise<EventSubTypeResponseDto> {
+  async create(
+    createEventSubTypeDto: CreateEventSubTypeDto,
+    token: string,
+  ): Promise<EventSubTypeResponseDto> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('event_sub_types')
       .insert(createEventSubTypeDto)
-      .select(`
+      .select(
+        `
         *,
         main_type:main_type_id (*)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
@@ -65,16 +78,22 @@ export class EventSubTypesService {
     return data;
   }
 
-  async update(id: number, updateEventSubTypeDto: UpdateEventSubTypeDto, token: string): Promise<EventSubTypeResponseDto> {
+  async update(
+    id: number,
+    updateEventSubTypeDto: UpdateEventSubTypeDto,
+    token: string,
+  ): Promise<EventSubTypeResponseDto> {
     const client = await this.supabaseService.getUserClient(token);
     const { data, error } = await client
       .from('event_sub_types')
       .update(updateEventSubTypeDto)
       .eq('id', id)
-      .select(`
+      .select(
+        `
         *,
         main_type:main_type_id (*)
-      `)
+      `,
+      )
       .single();
 
     if (error) {
@@ -97,4 +116,4 @@ export class EventSubTypesService {
       throw new Error('Failed to delete event sub type');
     }
   }
-} 
+}

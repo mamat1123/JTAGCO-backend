@@ -9,4 +9,4 @@ import { ProductVariantsController } from './product-variants.controller';
   providers: [ProductsService, ProductVariantsService],
   exports: [ProductsService, ProductVariantsService],
 })
-export class ProductsModule {} 
+export class ProductsModule {}

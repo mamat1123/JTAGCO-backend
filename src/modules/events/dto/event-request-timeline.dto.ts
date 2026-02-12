@@ -53,4 +53,4 @@ export class Step {
 
   @ApiProperty({ description: 'Step data with product variant information' })
   data?: ShoeRequestWithProductVariantDto[];
-} 
+}
